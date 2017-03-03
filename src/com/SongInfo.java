@@ -10,7 +10,7 @@ import org.json.JSONObject;
 import org.apache.commons.lang.StringUtils;
 
 public class SongInfo {
-	private String artist;
+	private ArrayList<String> artist;
 	private String name;
 	private String album;
 	private ArrayList<String> tags;
@@ -43,7 +43,7 @@ public class SongInfo {
 		Object[] nodes = null;
 		nodes = tag.evaluateXPath(xpath);
 		if( nodes == null || nodes.length == 0 ){
-			return null;
+			return new ArrayList<String>();
 		}
 		else{
 			ArrayList<String> ret = new ArrayList<String>();
@@ -55,14 +55,14 @@ public class SongInfo {
 		}
 	}
 	
-	public boolean setValues(String pageContents)
+	public boolean setValues(String pageurl, String pageContents)
 	{
 		TagNode tag = null;
 		tag = new HtmlCleaner().clean(pageContents);
 		try {
 			TagNode baseInfo = (TagNode) tag.evaluateXPath("/body//ul[@class = \"base-info c6\"]")[0];
 			
-			artist = getTagText(baseInfo, "/li/span[@class=\"author_list\"]/a");
+			artist = getMultiTagText(baseInfo, "/li/span[@class=\"author_list\"]/a");
 			name = getAttribute(baseInfo, "/li[@class=\"clearfix\"]/a", "title");
 			try {
 				album = getTagText(baseInfo, "/li[@class=\"clearfix\"]/a");
@@ -70,13 +70,10 @@ public class SongInfo {
 				album = "";
 			}
 			tags = getMultiTagText(baseInfo, "/li[@class=\"clearfix tag\"]/a[@class=\"tag-list\"]");
-			if(tags==null)
-				tags = new ArrayList<String>();
-			//String str = StringUtils.join(list.toArray(), ",");
 			return true;
 		} catch (Exception e) {
-			System.out.println(pageContents);
-			e.printStackTrace();
+			System.err.println("Parse error : " + pageurl);
+			//e.printStackTrace();
 		}
 		return false;
 	}
@@ -86,7 +83,7 @@ public class SongInfo {
 		StringBuilder line = new StringBuilder();
 		line.append("\t<song>\n");
 		line.append("\t\t<name>" + this.name + "</name>\n");
-		line.append("\t\t<artist>" + this.artist + "</artist>\n");
+		line.append("\t\t<artist>" + StringUtils.join(this.artist.toArray(), ",") + "</artist>\n");
 		line.append("\t\t<album>" + this.album + "</album>\n");
 		line.append("\t\t<tags>" + StringUtils.join(this.tags.toArray(), ",") + "</tags>\n");
 		line.append("\t</song>");
@@ -97,7 +94,7 @@ public class SongInfo {
 	{
 		JSONObject json=new JSONObject();
 		json.put("name", this.name);
-		json.put("artist", this.artist);
+		json.put("artist", StringUtils.join(this.artist.toArray(), ","));
 		json.put("album", this.album);
 		json.put("tags", StringUtils.join(this.tags.toArray(), ","));
 		return json.toString();

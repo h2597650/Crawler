@@ -1,7 +1,6 @@
 package com;
 
 import java.util.*;
-import java.util.Map.Entry;
 import java.net.*;
 import java.io.*;
 import java.util.concurrent.atomic.AtomicLong;
@@ -14,16 +13,16 @@ import org.jsoup.helper.HttpConnection;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+
 import org.json.JSONObject;
 import org.json.JSONArray;
 
 
 
-public class LongCrawler implements Runnable {
+public class Crawler implements Runnable {
 
-	
-	private LinkedHashSet<Long> toCrawlList;
-	private HashSet<Long> crawledList;
+	private LinkedHashSet<String> toCrawlList;
+	private HashSet<String> crawledList = new HashSet<String>();
 	private LinkedList<SongInfo> songsList;
 	
 	private String baseUrl;
@@ -31,7 +30,7 @@ public class LongCrawler implements Runnable {
 	private String xmlFile;
 	private Object writeLock, fetchLock;
 	
-	public LongCrawler(String baseUrl, long startID, long maxCnt, String xmlFile)
+	public Crawler(String baseUrl, long startID, long maxCnt, String xmlFile)
 	{
 		this.baseUrl = baseUrl;
 		this.startID = startID;
@@ -40,10 +39,9 @@ public class LongCrawler implements Runnable {
 		this.cnt = 0L;
 		this.writeLock = new Object();
 		this.fetchLock = new Object();
-		crawledList = new HashSet<Long>();
-		toCrawlList = new LinkedHashSet<Long>();
+		toCrawlList = new LinkedHashSet<String>();
 		songsList = new LinkedList<SongInfo>();
-		toCrawlList.add(startID);
+		toCrawlList.add("/song/" + startID);
 		
 		File file = new File(xmlFile);
 		if(file.isFile() && file.exists())
@@ -66,7 +64,7 @@ public class LongCrawler implements Runnable {
 		
 		while(true)
 		{
-			long pageID;
+			String pageID;
 			synchronized (this.toCrawlList)
 			{
 				if (toCrawlList.isEmpty())
@@ -80,7 +78,6 @@ public class LongCrawler implements Runnable {
 				Document document = Jsoup.connect(pageurl)
 						.userAgent("Mozilla/5.0 (Windows; U; WindowsNT 5.1; en-US; rv1.8.1.6) Gecko/20070725 Firefox/2.0.0.6")
 						.referrer("http://www.baidu.com")
-						.timeout(10000)
 						.get();
 				pageContents = document.html();
 				if (pageContents != null && pageContents.length() > 0) {
@@ -91,9 +88,13 @@ public class LongCrawler implements Runnable {
 						{
 							cnt++;
 							songsList.add(songInfo);
+							synchronized (this.crawledList)
+							{
+								crawledList.add(pageID);
+							}
 							if(cnt%100==0)
 								System.out.println("SongsCnt : " + cnt + ", toCrawlList : " + toCrawlList.size());
-							if(songsList.size()%5000==0)
+							if(songsList.size()%1000==0)
 							{
 								saveCurrentJSON(filePath);
 								songsList.clear();
@@ -101,27 +102,22 @@ public class LongCrawler implements Runnable {
 							//System.out.println(Thread.currentThread().getName() + " saved: " + pageID);
 						}
 					}
-			        synchronized (this.crawledList)
-			        {
-			        	crawledList.add(pageID);
-			        }
 					Elements songEles = document.select("span.song-title");
-					ArrayList<Long> hrefList = new ArrayList<Long>(), hrefList_tmp = new ArrayList<Long>();
+					ArrayList<String> hrefList = new ArrayList<String>();
 					for(Element songEle : songEles) {
 						String hrefStr = songEle.select("a").attr("href");
-						int lastIndex = hrefStr.lastIndexOf('/');
-						try {
-							long hrefID = Long.parseLong(hrefStr.substring(lastIndex+1));
-							hrefList_tmp.add(hrefID);
-						} catch (Exception e) {
-						}
-					}
-					synchronized (this.crawledList)
-					{
-						for(Long val : hrefList_tmp)
-							if(!crawledList.contains(val))
-								hrefList.add(val);
-								
+						if(!crawledList.contains(hrefStr))
+							hrefList.add(hrefStr);
+//						if(hrefStr.indexOf('?')>=0)
+//							continue;
+//						int lastIndex = hrefStr.lastIndexOf('/');
+//						try {
+//							long hrefID = Long.parseLong(hrefStr.substring(lastIndex+1));
+//							hrefList.add(hrefID);
+//						} catch (Exception e) {
+//							System.err.println(pageID);
+//							System.err.println(hrefStr);
+//						}
 					}
 					synchronized (this.toCrawlList)
 					{
@@ -129,11 +125,6 @@ public class LongCrawler implements Runnable {
 					}
 				}
 			} catch (IOException e) {
-                System.err.println("Fetch error : " + pageurl);
-				synchronized (this.toCrawlList)
-				{
-					toCrawlList.add(pageID);
-				}
 				//e.printStackTrace();
 			}
 		}
@@ -192,8 +183,8 @@ public class LongCrawler implements Runnable {
 	
 	
 	public static void main(String[] args) {
-		int maxThreads = 24;
-		LongCrawler crawler = new LongCrawler("http://music.baidu.com/song/", 266322598L, 1000L, "songs.json");
+		int maxThreads = 20;
+		Crawler crawler = new Crawler("http://music.baidu.com", 266322598L, 1000L, "songs.json");
 		ArrayList<Thread> threads = new ArrayList<Thread>();
 		for (int i = 0; i < maxThreads; i++) {
 			threads.add(new Thread(crawler,"Thread "+i));
