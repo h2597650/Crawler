@@ -9,7 +9,10 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 import java.util.regex.*;
 
+<<<<<<< HEAD
 import org.apache.commons.logging.LogFactory;
+=======
+>>>>>>> 41e47afa2045b4ddb8876a2aa6f87a6d759ecf40
 import org.jsoup.Connection;
 import org.jsoup.Connection.Method;
 import org.jsoup.Connection.Response;
@@ -26,7 +29,10 @@ import com.gargoylesoftware.htmlunit.BrowserVersion;
 import com.gargoylesoftware.htmlunit.CookieManager;
 import com.gargoylesoftware.htmlunit.FailingHttpStatusCodeException;
 import com.gargoylesoftware.htmlunit.IncorrectnessListener;
+<<<<<<< HEAD
 //import com.gargoylesoftware.htmlunit.InteractivePage;
+=======
+>>>>>>> 41e47afa2045b4ddb8876a2aa6f87a6d759ecf40
 import com.gargoylesoftware.htmlunit.NicelyResynchronizingAjaxController;
 import com.gargoylesoftware.htmlunit.ScriptException;
 import com.gargoylesoftware.htmlunit.SilentCssErrorHandler;
@@ -352,15 +358,20 @@ public class XiamiArtistCrawler implements Runnable {
 	}
 	
 	static {
+<<<<<<< HEAD
 		System.setProperty("org.apache.commons.logging.Log", "org.apache.commons.logging.impl.NoOpLog");
 //		java.util.logging.Logger.getLogger("").setLevel(Level.OFF); 
 //		org.apache.log4j.Logger.getLogger("").setLevel(org.apache.log4j.Level.FATAL);     
+=======
+		System.setProperty("org.apache.commons.logging.Log", "org.apache.commons.logging.impl.NoOpLog");     
+>>>>>>> 41e47afa2045b4ddb8876a2aa6f87a6d759ecf40
 
 	}
 	      
 	
 	public static void main(String[] args) throws Exception {
 
+<<<<<<< HEAD
 //		java.util.logging.Logger.getLogger("").setLevel(Level.OFF); 
 //		org.apache.log4j.Logger.getLogger("").setLevel(org.apache.log4j.Level.FATAL);    
 //		org.apache.commons.logging.LogFactory.getFactory().setAttribute("org.apache.commons.logging.Log", "org.apache.commons.logging.impl.NoOpLog");
@@ -384,6 +395,10 @@ public class XiamiArtistCrawler implements Runnable {
 //		org.apache.log4j.Logger.getLogger("gargoylesoftware.htmlunit.WebTestCase").setLevel(org.apache.log4j.Level.FATAL);
 //		org.apache.log4j.Logger.getLogger("gargoylesoftware.htmlunit.javascript.DebugFrameImpl").setLevel(org.apache.log4j.Level.FATAL);	    
 //		
+=======
+		java.util.logging.Logger.getLogger("").setLevel(Level.OFF);    
+//		org.apache.commons.logging.LogFactory.getFactory().setAttribute("org.apache.commons.logging.Log", "org.apache.commons.logging.impl.NoOpLog");	
+>>>>>>> 41e47afa2045b4ddb8876a2aa6f87a6d759ecf40
 //		java.util.logging.Logger.getLogger("org.mozilla").setLevel(Level.OFF); 
 //		java.util.logging.Logger.getLogger("org.mozilla.javascript").setLevel(Level.OFF); 
 //		java.util.logging.Logger.getLogger("sun.org.mozilla").setLevel(Level.OFF); 
