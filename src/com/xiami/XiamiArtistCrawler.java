@@ -10,7 +10,6 @@ import java.util.logging.Level;
 import java.util.regex.*;
 
 import org.apache.commons.logging.LogFactory;
-import org.apache.log4j.varia.NullAppender;
 import org.jsoup.Connection;
 import org.jsoup.Connection.Method;
 import org.jsoup.Connection.Response;
@@ -27,7 +26,7 @@ import com.gargoylesoftware.htmlunit.BrowserVersion;
 import com.gargoylesoftware.htmlunit.CookieManager;
 import com.gargoylesoftware.htmlunit.FailingHttpStatusCodeException;
 import com.gargoylesoftware.htmlunit.IncorrectnessListener;
-import com.gargoylesoftware.htmlunit.InteractivePage;
+//import com.gargoylesoftware.htmlunit.InteractivePage;
 import com.gargoylesoftware.htmlunit.NicelyResynchronizingAjaxController;
 import com.gargoylesoftware.htmlunit.ScriptException;
 import com.gargoylesoftware.htmlunit.SilentCssErrorHandler;
@@ -119,7 +118,7 @@ public class XiamiArtistCrawler implements Runnable {
 			if(delay>10000)
 				continue;
 			String pageurl = baseUrl + pageID;
-			String pageContents = null;
+            HtmlPage htmlPage = null;
 			try {
 				
 				WebClient webClient=new WebClient(BrowserVersion.FIREFOX_45);
@@ -135,7 +134,7 @@ public class XiamiArtistCrawler implements Runnable {
 
 				
 				
-				HtmlPage htmlPage  = (HtmlPage) webClient.getPage(pageurl);
+				htmlPage  = (HtmlPage) webClient.getPage(pageurl);
 				// load js and ajax
 				HtmlEmphasis playCnt_ele;
 				do {
@@ -236,7 +235,7 @@ public class XiamiArtistCrawler implements Runnable {
 							new FileOutputStream(albumFolder + "/" + albumID + ".album"), "UTF-8"));
 					bufw.write(annotateURL(albumURL) + albumPage.html());
 					bufw.close();
-					//System.out.println(Thread.currentThread().getName() + " saved album : " + albumID);
+					System.out.println(Thread.currentThread().getName() + " saved album : " + albumID);
 					
 					Elements songEles = albumPage.select("td.song_name");
 					for(Element songEle : songEles) {
@@ -253,7 +252,7 @@ public class XiamiArtistCrawler implements Runnable {
 								new FileOutputStream(albumFolder + "/" + songHref + ".song"), "UTF-8"));
 						bufw.write(annotateURL(songURL) + songPage.html());
 						bufw.close();
-						//System.out.println(Thread.currentThread().getName() + " saved song : " + songHref);
+						System.out.println(Thread.currentThread().getName() + " saved song : " + songHref);
 					}
 				}
 				
@@ -285,7 +284,8 @@ public class XiamiArtistCrawler implements Runnable {
 				{
 					toCrawlList.put(pageID, delay+1000);
 				}
-				//e.printStackTrace();
+				e.printStackTrace();
+		        //System.out.println(htmlPage.asXml());
 			}
 		}
 		if(Thread.currentThread().getName().equals("Thread 0"))
@@ -353,16 +353,16 @@ public class XiamiArtistCrawler implements Runnable {
 	
 	static {
 		System.setProperty("org.apache.commons.logging.Log", "org.apache.commons.logging.impl.NoOpLog");
-		java.util.logging.Logger.getLogger("").setLevel(Level.OFF); 
-		org.apache.log4j.Logger.getLogger("").setLevel(org.apache.log4j.Level.FATAL);     
+//		java.util.logging.Logger.getLogger("").setLevel(Level.OFF); 
+//		org.apache.log4j.Logger.getLogger("").setLevel(org.apache.log4j.Level.FATAL);     
 
 	}
 	      
 	
 	public static void main(String[] args) throws Exception {
 
-		java.util.logging.Logger.getLogger("").setLevel(Level.OFF); 
-		org.apache.log4j.Logger.getLogger("").setLevel(org.apache.log4j.Level.FATAL);    
+//		java.util.logging.Logger.getLogger("").setLevel(Level.OFF); 
+//		org.apache.log4j.Logger.getLogger("").setLevel(org.apache.log4j.Level.FATAL);    
 //		org.apache.commons.logging.LogFactory.getFactory().setAttribute("org.apache.commons.logging.Log", "org.apache.commons.logging.impl.NoOpLog");
 //			
 //		org.apache.log4j.Logger.getRootLogger().setLevel(org.apache.log4j.Level.FATAL);
@@ -411,7 +411,7 @@ public class XiamiArtistCrawler implements Runnable {
 
 		
 		
-		int maxThreads = 20;
+		int maxThreads = 1;
 		String[] artistIDs = new String[]{"dz264c5b", "ihyffebb", "6in9397a", "0d5492a", "iim17edb", "djGc4149", 
 				"O9fc383", "573", "2017", "135", "57908", "bhu21804", "hf0143fd", "sGE39222", "K1z4dbb3", 
 				"1198", "fHIe070b", "3110", "xIW446b0", "Ksd4688", "9K9c05a", "198ed78", "vuV4030c", "be6yda0f8", 
