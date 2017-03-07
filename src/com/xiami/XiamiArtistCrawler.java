@@ -136,7 +136,7 @@ public class XiamiArtistCrawler implements Runnable {
 				webClient.getOptions().setJavaScriptEnabled(true);
 				webClient.waitForBackgroundJavaScript(10000);
 				webClient.setAjaxController(new NicelyResynchronizingAjaxController());
-				webClient.setCookieManager(cookieManager);
+				//webClient.setCookieManager(cookieManager);
 
 				
 				
@@ -188,9 +188,8 @@ public class XiamiArtistCrawler implements Runnable {
 				// extract album list
 				String alubmurl = baseUrl + "album-" + pageID;
 				Document albumMainPage = Jsoup.connect(alubmurl)
-						.userAgent("Mozilla/5.0 (Windows; U; WindowsNT 5.1; en-US; rv1.8.1.6) Gecko/20070725 Firefox/2.0.0.6")
+						.userAgent("Mozilla/5.0 (Windows; U; WindowsNT 5.1; en-US; rv2.0.1.6) Gecko/20140725 Firefox/2.0.0.6")
 						.referrer("http://www.xiami.com")
-						.cookies(userCookies)
 						.timeout(5000+delay)
 						.get();
 				Element albumCntEle = albumMainPage.select("div.cate_viewmode").select(".clearfix >p.counts").first();
@@ -211,9 +210,8 @@ public class XiamiArtistCrawler implements Runnable {
 				for(int idx = 1; idx <= albumPageCnt; ++idx)
 				{
 					Document albumsPage = Jsoup.connect(alubmurl + "?page=" + idx)
-							.userAgent("Mozilla/5.0 (Windows; U; WindowsNT 5.1; en-US; rv1.8.1.6) Gecko/20070725 Firefox/2.0.0.6")
+							.userAgent("Mozilla/5.0 (Windows; U; WindowsNT 5.1; en-US; rv1.5.1.6) Gecko/20070725 Firefox/2.0.0.6")
 							.referrer("http://www.xiami.com")
-							.cookies(userCookies)
 							.timeout(5000+delay)
 							.get();
 					Elements albumEles = albumsPage.select("div.album_item100_thread > div.info a.CDcover100");
@@ -230,9 +228,8 @@ public class XiamiArtistCrawler implements Runnable {
 				{
 					String albumURL = "http://www.xiami.com/album/" + albumID;
 					Document albumPage = Jsoup.connect(albumURL)
-							.userAgent("Mozilla/5.0 (Windows; U; WindowsNT 5.1; en-US; rv1.8.1.6) Gecko/20070725 Firefox/2.0.0.6")
+							.userAgent("Mozilla/5.0 (Windows; U; WindowsNT 5.1; en-US; rv2.1.1.6) Gecko/20090725 Firefox/2.0.0.6")
 							.referrer("http://www.xiami.com")
-							.cookies(userCookies)
 							.timeout(5000+delay)
 							.get();
 					String albumFolder = folder + "/" + albumID;
@@ -249,9 +246,8 @@ public class XiamiArtistCrawler implements Runnable {
 						songHref = extractID(songHref);
 						String songURL = "http://www.xiami.com/song/" + songHref;
 						Document songPage = Jsoup.connect(songURL)
-								.userAgent("Mozilla/5.0 (Windows; U; WindowsNT 5.1; en-US; rv1.8.1.6) Gecko/20070725 Firefox/2.0.0.6")
+								.userAgent("Mozilla/5.0 (Windows; U; WindowsNT 5.1; en-US; rv1.8.1.6) Gecko/20130725 Firefox/2.0.0.6")
 								.referrer("http://www.xiami.com")
-								.cookies(userCookies)
 								.timeout(5000+delay)
 								.get();
 						bufw = new BufferedWriter(new OutputStreamWriter(
@@ -358,20 +354,16 @@ public class XiamiArtistCrawler implements Runnable {
 	}
 	
 	static {
-<<<<<<< HEAD
 		System.setProperty("org.apache.commons.logging.Log", "org.apache.commons.logging.impl.NoOpLog");
 //		java.util.logging.Logger.getLogger("").setLevel(Level.OFF); 
 //		org.apache.log4j.Logger.getLogger("").setLevel(org.apache.log4j.Level.FATAL);     
-=======
-		System.setProperty("org.apache.commons.logging.Log", "org.apache.commons.logging.impl.NoOpLog");     
->>>>>>> 41e47afa2045b4ddb8876a2aa6f87a6d759ecf40
+
 
 	}
 	      
 	
 	public static void main(String[] args) throws Exception {
 
-<<<<<<< HEAD
 //		java.util.logging.Logger.getLogger("").setLevel(Level.OFF); 
 //		org.apache.log4j.Logger.getLogger("").setLevel(org.apache.log4j.Level.FATAL);    
 //		org.apache.commons.logging.LogFactory.getFactory().setAttribute("org.apache.commons.logging.Log", "org.apache.commons.logging.impl.NoOpLog");
@@ -395,10 +387,9 @@ public class XiamiArtistCrawler implements Runnable {
 //		org.apache.log4j.Logger.getLogger("gargoylesoftware.htmlunit.WebTestCase").setLevel(org.apache.log4j.Level.FATAL);
 //		org.apache.log4j.Logger.getLogger("gargoylesoftware.htmlunit.javascript.DebugFrameImpl").setLevel(org.apache.log4j.Level.FATAL);	    
 //		
-=======
-		java.util.logging.Logger.getLogger("").setLevel(Level.OFF);    
+  
 //		org.apache.commons.logging.LogFactory.getFactory().setAttribute("org.apache.commons.logging.Log", "org.apache.commons.logging.impl.NoOpLog");	
->>>>>>> 41e47afa2045b4ddb8876a2aa6f87a6d759ecf40
+
 //		java.util.logging.Logger.getLogger("org.mozilla").setLevel(Level.OFF); 
 //		java.util.logging.Logger.getLogger("org.mozilla.javascript").setLevel(Level.OFF); 
 //		java.util.logging.Logger.getLogger("sun.org.mozilla").setLevel(Level.OFF); 
