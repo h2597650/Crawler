@@ -9,10 +9,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 import java.util.regex.*;
 
-<<<<<<< HEAD
 import org.apache.commons.logging.LogFactory;
-=======
->>>>>>> 41e47afa2045b4ddb8876a2aa6f87a6d759ecf40
 import org.jsoup.Connection;
 import org.jsoup.Connection.Method;
 import org.jsoup.Connection.Response;
@@ -29,10 +26,6 @@ import com.gargoylesoftware.htmlunit.BrowserVersion;
 import com.gargoylesoftware.htmlunit.CookieManager;
 import com.gargoylesoftware.htmlunit.FailingHttpStatusCodeException;
 import com.gargoylesoftware.htmlunit.IncorrectnessListener;
-<<<<<<< HEAD
-//import com.gargoylesoftware.htmlunit.InteractivePage;
-=======
->>>>>>> 41e47afa2045b4ddb8876a2aa6f87a6d759ecf40
 import com.gargoylesoftware.htmlunit.NicelyResynchronizingAjaxController;
 import com.gargoylesoftware.htmlunit.ScriptException;
 import com.gargoylesoftware.htmlunit.SilentCssErrorHandler;
