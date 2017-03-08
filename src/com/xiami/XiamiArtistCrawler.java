@@ -24,9 +24,11 @@ import org.json.JSONArray;
 
 import com.gargoylesoftware.htmlunit.BrowserVersion;
 import com.gargoylesoftware.htmlunit.CookieManager;
+import com.gargoylesoftware.htmlunit.DefaultCredentialsProvider;
 import com.gargoylesoftware.htmlunit.FailingHttpStatusCodeException;
 import com.gargoylesoftware.htmlunit.IncorrectnessListener;
 import com.gargoylesoftware.htmlunit.NicelyResynchronizingAjaxController;
+import com.gargoylesoftware.htmlunit.ProxyConfig;
 import com.gargoylesoftware.htmlunit.ScriptException;
 import com.gargoylesoftware.htmlunit.SilentCssErrorHandler;
 import com.gargoylesoftware.htmlunit.WebClient;
@@ -46,6 +48,8 @@ public class XiamiArtistCrawler implements Runnable {
 	private long maxCnt, cnt;
 	private String basePath;
 	private Object writeLock, fetchLock;
+	private ArrayList<Map.Entry<String, Integer>> proxyList = null;
+	private ArrayList<DefaultCredentialsProvider> providerList = null;
 	
 	private Map<String, String> userCookies;
 	private CookieManager cookieManager;
@@ -129,9 +133,17 @@ public class XiamiArtistCrawler implements Runnable {
 				webClient.getOptions().setJavaScriptEnabled(true);
 				webClient.waitForBackgroundJavaScript(10000);
 				webClient.setAjaxController(new NicelyResynchronizingAjaxController());
+//				if(proxyList!=null && proxyList.size()>0) {
+//					int idx = Math.abs(pageID.hashCode()) % proxyList.size();
+//					ProxyConfig proxyConfig = new ProxyConfig(proxyList.get(idx).getKey(), proxyList.get(idx).getValue());
+//					webClient.getOptions().setProxyConfig(proxyConfig);
+//				}
 				//webClient.setCookieManager(cookieManager);
+				if(providerList!=null && providerList.size()>0) {
+					int idx = Math.abs(pageID.hashCode()) % providerList.size();
+					webClient.setCredentialsProvider(providerList.get(idx));
+				}
 
-				
 				
 				htmlPage  = (HtmlPage) webClient.getPage(pageurl);
 				// load js and ajax
@@ -346,6 +358,47 @@ public class XiamiArtistCrawler implements Runnable {
 		return StringUtil.join(dirs, "/");
 	}
 	
+
+	public void setProxy(String filepath)
+	{
+		HashMap<String,Integer> proxyMap = new HashMap<String,Integer>();
+		BufferedReader bufr;
+		try {
+			bufr = new BufferedReader(new InputStreamReader(
+					new FileInputStream(filepath), "UTF-8"));
+			String line = null;
+			while( (line = bufr.readLine())!=null ) {
+				String[] tmps = line.split(":");
+				proxyMap.put(tmps[0], Integer.parseInt(tmps[1]));
+			}
+			bufr.close();
+			proxyList = new ArrayList<Map.Entry<String, Integer>>(proxyMap.entrySet());
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+	
+	public void setProvider(String filepath)
+	{
+		providerList = new ArrayList<DefaultCredentialsProvider>();
+		BufferedReader bufr;
+		try {
+			bufr = new BufferedReader(new InputStreamReader(
+					new FileInputStream(filepath), "UTF-8"));
+			String line = null;
+			while( (line = bufr.readLine())!=null ) {
+				String[] tmps = line.split(" ");
+				DefaultCredentialsProvider scp = new DefaultCredentialsProvider();
+				//61.160.221.41 888 tyt0308 tyt0308
+				scp.addCredentials(tmps[2], tmps[3], tmps[0], Integer.parseInt(tmps[1]), null);
+				providerList.add(scp);
+			}
+			bufr.close();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+	
 	static {
 		System.setProperty("org.apache.commons.logging.Log", "org.apache.commons.logging.impl.NoOpLog");
 //		java.util.logging.Logger.getLogger("").setLevel(Level.OFF); 
@@ -410,7 +463,7 @@ public class XiamiArtistCrawler implements Runnable {
 
 		
 		
-		int maxThreads = 5;
+		int maxThreads = 10;
 		String[] artistIDs = new String[]{"dz264c5b", "ihyffebb", "6in9397a", "0d5492a", "iim17edb", "djGc4149", 
 				"O9fc383", "573", "2017", "135", "57908", "bhu21804", "hf0143fd", "sGE39222", "K1z4dbb3", 
 				"1198", "fHIe070b", "3110", "xIW446b0", "Ksd4688", "9K9c05a", "198ed78", "vuV4030c", "be6yda0f8", 
@@ -418,6 +471,8 @@ public class XiamiArtistCrawler implements Runnable {
 				"ixyea99c", "iwbf4790", "fGr9f340", "wz90661"};
 		XiamiArtistCrawler crawler = new XiamiArtistCrawler("http://www.xiami.com/artist/", artistIDs, 1000L, "xiami/");
 		crawler.login("15010700399","2517399LK");
+//		crawler.setProxy("proxy.txt");
+		crawler.setProvider("provider.txt");
 		ArrayList<Thread> threads = new ArrayList<Thread>();
 		for (int i = 0; i < maxThreads; i++) {
 			threads.add(new Thread(crawler,"Thread "+i));
