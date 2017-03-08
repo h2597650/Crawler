@@ -463,7 +463,7 @@ public class XiamiArtistCrawler implements Runnable {
 
 		
 		
-		int maxThreads = 10;
+		int maxThreads = 5;
 		String[] artistIDs = new String[]{"dz264c5b", "ihyffebb", "6in9397a", "0d5492a", "iim17edb", "djGc4149", 
 				"O9fc383", "573", "2017", "135", "57908", "bhu21804", "hf0143fd", "sGE39222", "K1z4dbb3", 
 				"1198", "fHIe070b", "3110", "xIW446b0", "Ksd4688", "9K9c05a", "198ed78", "vuV4030c", "be6yda0f8", 
