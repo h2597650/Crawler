@@ -190,78 +190,78 @@ public class XiamiArtistCrawler implements Runnable {
 				bufw.write(annotateURL(pageurl) + htmlPage.asXml());
 				bufw.close();
 				
-				// extract album list
-				String alubmurl = baseUrl + "album-" + pageID;
-				Document albumMainPage = Jsoup.connect(alubmurl)
-						.userAgent("Mozilla/5.0 (Windows; U; WindowsNT 5.1; en-US; rv2.0.1.6) Gecko/20140725 Firefox/2.0.0.6")
-						.referrer("http://www.xiami.com")
-						.timeout(5000+delay)
-						.get();
-				Element albumCntEle = albumMainPage.select("div.cate_viewmode").select(".clearfix >p.counts").first();
-				int numsFirst=0, numsLast=0;
-				for(int i = 0; i < albumCntEle.text().length(); ++i)
-					if(Character.isDigit(albumCntEle.text().charAt(i))) {
-						numsFirst = i;
-						break;
-					}
-				for(int i = albumCntEle.text().length()-1; i >= 0; --i)
-					if(Character.isDigit(albumCntEle.text().charAt(i))) {
-						numsLast = i;
-						break;
-					}
-				int albumCnt = Integer.parseInt(albumCntEle.text().substring(numsFirst, numsLast+1));
-				int albumPageCnt = (albumCnt-1)/9+1;
-				ArrayList<String> albumList = new ArrayList<String>();
-				for(int idx = 1; idx <= albumPageCnt; ++idx)
-				{
-					Document albumsPage = Jsoup.connect(alubmurl + "?page=" + idx)
-							.userAgent("Mozilla/5.0 (Windows; U; WindowsNT 5.1; en-US; rv1.5.1.6) Gecko/20070725 Firefox/2.0.0.6")
-							.referrer("http://www.xiami.com")
-							.timeout(5000+delay)
-							.get();
-					Elements albumEles = albumsPage.select("div.album_item100_thread > div.info a.CDcover100");
-					
-					for(Element albumEle : albumEles) {
-						String albumHref = albumEle.attr("href");
-						albumHref = extractID(albumHref);
-						albumList.add(albumHref);
-					}
-				}
-				//System.out.println(albumList.size());
-				// save album pages
-				for(String albumID : albumList)
-				{
-					String albumURL = "http://www.xiami.com/album/" + albumID;
-					Document albumPage = Jsoup.connect(albumURL)
-							.userAgent("Mozilla/5.0 (Windows; U; WindowsNT 5.1; en-US; rv2.1.1.6) Gecko/20090725 Firefox/2.0.0.6")
-							.referrer("http://www.xiami.com")
-							.timeout(5000+delay)
-							.get();
-					String albumFolder = folder + "/" + albumID;
-					new File(albumFolder).mkdirs();
-					bufw = new BufferedWriter(new OutputStreamWriter(
-							new FileOutputStream(albumFolder + "/" + albumID + ".album"), "UTF-8"));
-					bufw.write(annotateURL(albumURL) + albumPage.html());
-					bufw.close();
-					System.out.println(Thread.currentThread().getName() + " saved album : " + albumID);
-					
-					Elements songEles = albumPage.select("td.song_name");
-					for(Element songEle : songEles) {
-						String songHref = songEle.select("a").first().attr("href");
-						songHref = extractID(songHref);
-						String songURL = "http://www.xiami.com/song/" + songHref;
-						Document songPage = Jsoup.connect(songURL)
-								.userAgent("Mozilla/5.0 (Windows; U; WindowsNT 5.1; en-US; rv1.8.1.6) Gecko/20130725 Firefox/2.0.0.6")
-								.referrer("http://www.xiami.com")
-								.timeout(5000+delay)
-								.get();
-						bufw = new BufferedWriter(new OutputStreamWriter(
-								new FileOutputStream(albumFolder + "/" + songHref + ".song"), "UTF-8"));
-						bufw.write(annotateURL(songURL) + songPage.html());
-						bufw.close();
-						System.out.println(Thread.currentThread().getName() + " saved song : " + songHref);
-					}
-				}
+//				// extract album list
+//				String alubmurl = baseUrl + "album-" + pageID;
+//				Document albumMainPage = Jsoup.connect(alubmurl)
+//						.userAgent("Mozilla/5.0 (Windows; U; WindowsNT 5.1; en-US; rv2.0.1.6) Gecko/20140725 Firefox/2.0.0.6")
+//						.referrer("http://www.xiami.com")
+//						.timeout(5000+delay)
+//						.get();
+//				Element albumCntEle = albumMainPage.select("div.cate_viewmode").select(".clearfix >p.counts").first();
+//				int numsFirst=0, numsLast=0;
+//				for(int i = 0; i < albumCntEle.text().length(); ++i)
+//					if(Character.isDigit(albumCntEle.text().charAt(i))) {
+//						numsFirst = i;
+//						break;
+//					}
+//				for(int i = albumCntEle.text().length()-1; i >= 0; --i)
+//					if(Character.isDigit(albumCntEle.text().charAt(i))) {
+//						numsLast = i;
+//						break;
+//					}
+//				int albumCnt = Integer.parseInt(albumCntEle.text().substring(numsFirst, numsLast+1));
+//				int albumPageCnt = (albumCnt-1)/9+1;
+//				ArrayList<String> albumList = new ArrayList<String>();
+//				for(int idx = 1; idx <= albumPageCnt; ++idx)
+//				{
+//					Document albumsPage = Jsoup.connect(alubmurl + "?page=" + idx)
+//							.userAgent("Mozilla/5.0 (Windows; U; WindowsNT 5.1; en-US; rv1.5.1.6) Gecko/20070725 Firefox/2.0.0.6")
+//							.referrer("http://www.xiami.com")
+//							.timeout(5000+delay)
+//							.get();
+//					Elements albumEles = albumsPage.select("div.album_item100_thread > div.info a.CDcover100");
+//					
+//					for(Element albumEle : albumEles) {
+//						String albumHref = albumEle.attr("href");
+//						albumHref = extractID(albumHref);
+//						albumList.add(albumHref);
+//					}
+//				}
+//				//System.out.println(albumList.size());
+//				// save album pages
+//				for(String albumID : albumList)
+//				{
+//					String albumURL = "http://www.xiami.com/album/" + albumID;
+//					Document albumPage = Jsoup.connect(albumURL)
+//							.userAgent("Mozilla/5.0 (Windows; U; WindowsNT 5.1; en-US; rv2.1.1.6) Gecko/20090725 Firefox/2.0.0.6")
+//							.referrer("http://www.xiami.com")
+//							.timeout(5000+delay)
+//							.get();
+//					String albumFolder = folder + "/" + albumID;
+//					new File(albumFolder).mkdirs();
+//					bufw = new BufferedWriter(new OutputStreamWriter(
+//							new FileOutputStream(albumFolder + "/" + albumID + ".album"), "UTF-8"));
+//					bufw.write(annotateURL(albumURL) + albumPage.html());
+//					bufw.close();
+//					System.out.println(Thread.currentThread().getName() + " saved album : " + albumID);
+//					
+//					Elements songEles = albumPage.select("td.song_name");
+//					for(Element songEle : songEles) {
+//						String songHref = songEle.select("a").first().attr("href");
+//						songHref = extractID(songHref);
+//						String songURL = "http://www.xiami.com/song/" + songHref;
+//						Document songPage = Jsoup.connect(songURL)
+//								.userAgent("Mozilla/5.0 (Windows; U; WindowsNT 5.1; en-US; rv1.8.1.6) Gecko/20130725 Firefox/2.0.0.6")
+//								.referrer("http://www.xiami.com")
+//								.timeout(5000+delay)
+//								.get();
+//						bufw = new BufferedWriter(new OutputStreamWriter(
+//								new FileOutputStream(albumFolder + "/" + songHref + ".song"), "UTF-8"));
+//						bufw.write(annotateURL(songURL) + songPage.html());
+//						bufw.close();
+//						System.out.println(Thread.currentThread().getName() + " saved song : " + songHref);
+//					}
+//				}
 				
 				synchronized (this.crawledList)
 		        {
