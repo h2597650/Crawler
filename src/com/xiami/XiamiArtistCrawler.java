@@ -41,8 +41,8 @@ import com.gargoylesoftware.htmlunit.util.Cookie;
 public class XiamiArtistCrawler implements Runnable {
 
 	
-	private LinkedHashMap<String, Integer> toCrawlList;
-	private HashSet<String> crawledList;
+	private LinkedHashMap<String, Integer> toCrawlList, artistList;
+	private HashSet<String> crawledList; 
 	
 	private String baseUrl, startID;
 	private long maxCnt, cnt;
@@ -54,23 +54,24 @@ public class XiamiArtistCrawler implements Runnable {
 	private Map<String, String> userCookies;
 	private CookieManager cookieManager;
 	
-	public XiamiArtistCrawler(String baseUrl, String startID, long maxCnt, String xmlFile)
-	{
-		this.baseUrl = baseUrl;
-		this.startID = startID;
-		this.maxCnt = maxCnt;
-		this.basePath = xmlFile;
-		this.cnt = 0L;
-		this.writeLock = new Object();
-		this.fetchLock = new Object();
-		crawledList = new HashSet<String>();
-		toCrawlList = new LinkedHashMap<String,Integer>();
-		toCrawlList.put(startID, 0);
-		
-		File file = new File(xmlFile);
-		if(file.isFile() && file.exists())
-			file.delete();
-	}
+//	public XiamiArtistCrawler(String baseUrl, String startID, long maxCnt, String xmlFile)
+//	{
+//		this.baseUrl = baseUrl;
+//		this.startID = startID;
+//		this.maxCnt = maxCnt;
+//		this.basePath = xmlFile;
+//		this.cnt = 0L;
+//		this.writeLock = new Object();
+//		this.fetchLock = new Object();
+//		crawledList = new HashSet<String>();
+//		toCrawlList = new LinkedHashMap<String,Integer>();
+//		toCrawlList.put(startID, 0);
+//		
+//		
+//		File file = new File(xmlFile);
+//		if(file.isFile() && file.exists())
+//			file.delete();
+//	}
 	
 	public XiamiArtistCrawler(String baseUrl, String[] startIDs, long maxCnt, String xmlFile)
 	{
@@ -85,6 +86,7 @@ public class XiamiArtistCrawler implements Runnable {
 		toCrawlList = new LinkedHashMap<String,Integer>();
 		for(String id : startIDs)
 			toCrawlList.put(id, 0);
+		artistList = new LinkedHashMap<String,Integer>();
 		
 		File file = new File(xmlFile);
 		if(file.isFile() && file.exists())
@@ -105,7 +107,7 @@ public class XiamiArtistCrawler implements Runnable {
 			}
 		}
 		
-		while(true)
+		while(cnt<100)
 		{
 			String pageID;
 			int delay;
@@ -190,78 +192,7 @@ public class XiamiArtistCrawler implements Runnable {
 				bufw.write(annotateURL(pageurl) + htmlPage.asXml());
 				bufw.close();
 				
-//				// extract album list
-//				String alubmurl = baseUrl + "album-" + pageID;
-//				Document albumMainPage = Jsoup.connect(alubmurl)
-//						.userAgent("Mozilla/5.0 (Windows; U; WindowsNT 5.1; en-US; rv2.0.1.6) Gecko/20140725 Firefox/2.0.0.6")
-//						.referrer("http://www.xiami.com")
-//						.timeout(5000+delay)
-//						.get();
-//				Element albumCntEle = albumMainPage.select("div.cate_viewmode").select(".clearfix >p.counts").first();
-//				int numsFirst=0, numsLast=0;
-//				for(int i = 0; i < albumCntEle.text().length(); ++i)
-//					if(Character.isDigit(albumCntEle.text().charAt(i))) {
-//						numsFirst = i;
-//						break;
-//					}
-//				for(int i = albumCntEle.text().length()-1; i >= 0; --i)
-//					if(Character.isDigit(albumCntEle.text().charAt(i))) {
-//						numsLast = i;
-//						break;
-//					}
-//				int albumCnt = Integer.parseInt(albumCntEle.text().substring(numsFirst, numsLast+1));
-//				int albumPageCnt = (albumCnt-1)/9+1;
-//				ArrayList<String> albumList = new ArrayList<String>();
-//				for(int idx = 1; idx <= albumPageCnt; ++idx)
-//				{
-//					Document albumsPage = Jsoup.connect(alubmurl + "?page=" + idx)
-//							.userAgent("Mozilla/5.0 (Windows; U; WindowsNT 5.1; en-US; rv1.5.1.6) Gecko/20070725 Firefox/2.0.0.6")
-//							.referrer("http://www.xiami.com")
-//							.timeout(5000+delay)
-//							.get();
-//					Elements albumEles = albumsPage.select("div.album_item100_thread > div.info a.CDcover100");
-//					
-//					for(Element albumEle : albumEles) {
-//						String albumHref = albumEle.attr("href");
-//						albumHref = extractID(albumHref);
-//						albumList.add(albumHref);
-//					}
-//				}
-//				//System.out.println(albumList.size());
-//				// save album pages
-//				for(String albumID : albumList)
-//				{
-//					String albumURL = "http://www.xiami.com/album/" + albumID;
-//					Document albumPage = Jsoup.connect(albumURL)
-//							.userAgent("Mozilla/5.0 (Windows; U; WindowsNT 5.1; en-US; rv2.1.1.6) Gecko/20090725 Firefox/2.0.0.6")
-//							.referrer("http://www.xiami.com")
-//							.timeout(5000+delay)
-//							.get();
-//					String albumFolder = folder + "/" + albumID;
-//					new File(albumFolder).mkdirs();
-//					bufw = new BufferedWriter(new OutputStreamWriter(
-//							new FileOutputStream(albumFolder + "/" + albumID + ".album"), "UTF-8"));
-//					bufw.write(annotateURL(albumURL) + albumPage.html());
-//					bufw.close();
-//					System.out.println(Thread.currentThread().getName() + " saved album : " + albumID);
-//					
-//					Elements songEles = albumPage.select("td.song_name");
-//					for(Element songEle : songEles) {
-//						String songHref = songEle.select("a").first().attr("href");
-//						songHref = extractID(songHref);
-//						String songURL = "http://www.xiami.com/song/" + songHref;
-//						Document songPage = Jsoup.connect(songURL)
-//								.userAgent("Mozilla/5.0 (Windows; U; WindowsNT 5.1; en-US; rv1.8.1.6) Gecko/20130725 Firefox/2.0.0.6")
-//								.referrer("http://www.xiami.com")
-//								.timeout(5000+delay)
-//								.get();
-//						bufw = new BufferedWriter(new OutputStreamWriter(
-//								new FileOutputStream(albumFolder + "/" + songHref + ".song"), "UTF-8"));
-//						bufw.write(annotateURL(songURL) + songPage.html());
-//						bufw.close();
-//						System.out.println(Thread.currentThread().getName() + " saved song : " + songHref);
-//					}
-//				}
+				
 				
 				synchronized (this.crawledList)
 		        {
@@ -298,11 +229,14 @@ public class XiamiArtistCrawler implements Runnable {
 		if(Thread.currentThread().getName().equals("Thread 0"))
 		{
 			try {
-				Thread.sleep(2000);
+				Thread.sleep(40000);
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
 			synchronized (this.writeLock) {
+				for(String artist: crawledList)
+					artistList.put(artist, 0);
+				System.out.println(Thread.currentThread().getName() + " said : ready to crawl songs!");
 				this.writeLock.notifyAll();
 			}
 		}
@@ -315,6 +249,104 @@ public class XiamiArtistCrawler implements Runnable {
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
+		
+		while(true) {
+			String artistID = null;
+			int delay;
+			synchronized (this.artistList) {
+				if(artistList.isEmpty())
+					break;
+				Map.Entry<String, Integer> idEntry = artistList.entrySet().iterator().next();
+				artistID = idEntry.getKey();
+				delay = idEntry.getValue();
+				artistList.remove(artistID);
+			}
+			if(delay>10000)
+				continue;
+			String pageurl = baseUrl + artistID;
+			BufferedWriter bufw;
+			try {
+				// extract album list
+				String alubmurl = baseUrl + "album-" + artistID;
+				Document albumMainPage = Jsoup
+						.connect(alubmurl)
+						.userAgent("Mozilla/5.0 (Windows; U; WindowsNT 5.1; en-US; rv2.0.1.6) Gecko/20140725 Firefox/2.0.0.6")
+						.referrer("http://www.xiami.com").timeout(5000 + delay)
+						.get();
+				Element albumCntEle = albumMainPage.select("div.cate_viewmode").select(".clearfix >p.counts").first();
+				int numsFirst = 0, numsLast = 0;
+				for (int i = 0; i < albumCntEle.text().length(); ++i)
+					if (Character.isDigit(albumCntEle.text().charAt(i))) {
+						numsFirst = i;
+						break;
+					}
+				for (int i = albumCntEle.text().length() - 1; i >= 0; --i)
+					if (Character.isDigit(albumCntEle.text().charAt(i))) {
+						numsLast = i;
+						break;
+					}
+				int albumCnt = Integer.parseInt(albumCntEle.text().substring(numsFirst, numsLast + 1));
+				int albumPageCnt = (albumCnt - 1) / 9 + 1;
+				ArrayList<String> albumList = new ArrayList<String>();
+				for (int idx = 1; idx <= albumPageCnt; ++idx) {
+					Document albumsPage = Jsoup
+							.connect(alubmurl + "?page=" + idx)
+							.userAgent("Mozilla/5.0 (Windows; U; WindowsNT 5.1; en-US; rv1.5.1.6) Gecko/20070725 Firefox/2.0.0.6")
+							.referrer("http://www.xiami.com")
+							.timeout(5000 + delay).get();
+					Elements albumEles = albumsPage.select("div.album_item100_thread > div.info a.CDcover100");
+
+					for (Element albumEle : albumEles) {
+						String albumHref = albumEle.attr("href");
+						albumHref = extractID(albumHref);
+						albumList.add(albumHref);
+					}
+				}
+				// System.out.println(albumList.size());
+				// save album pages
+				for (String albumID : albumList) {
+					String albumURL = "http://www.xiami.com/album/" + albumID;
+					Document albumPage = Jsoup
+							.connect(albumURL)
+							.userAgent("Mozilla/5.0 (Windows; U; WindowsNT 5.1; en-US; rv2.1.1.6) Gecko/20090725 Firefox/2.0.0.6")
+							.referrer("http://www.xiami.com")
+							.timeout(5000 + delay).get();
+					String folder = basePath + mkdirLevel(artistID);
+					String albumFolder = folder + "/" + albumID;
+					new File(albumFolder).mkdirs();
+					bufw = new BufferedWriter(new OutputStreamWriter(
+							new FileOutputStream(albumFolder + "/" + albumID + ".album"), "UTF-8"));
+					bufw.write(annotateURL(albumURL) + albumPage.html());
+					bufw.close();
+					System.out.println(Thread.currentThread().getName() + " saved album : " + albumID);
+
+					Elements songEles = albumPage.select("td.song_name");
+					for (Element songEle : songEles) {
+						String songHref = songEle.select("a").first().attr("href");
+						songHref = extractID(songHref);
+						String songURL = "http://www.xiami.com/song/" + songHref;
+						Document songPage = Jsoup
+								.connect(songURL)
+								.userAgent("Mozilla/5.0 (Windows; U; WindowsNT 5.1; en-US; rv1.8.1.6) Gecko/20130725 Firefox/2.0.0.6")
+								.referrer("http://www.xiami.com")
+								.timeout(5000 + delay).get();
+						bufw = new BufferedWriter(new OutputStreamWriter(
+								new FileOutputStream(albumFolder + "/" + songHref + ".song"), "UTF-8"));
+						bufw.write(annotateURL(songURL) + songPage.html());
+						bufw.close();
+						System.out.println(Thread.currentThread().getName() + " saved song : " + songHref);
+					}
+				}
+			} catch (Exception e) {
+				System.err.println("Fetch error : " + pageurl);
+				synchronized (this.artistList) {
+					artistList.put(artistID, delay + 1000);
+				}
+				e.printStackTrace();
+				System.exit(-1);
+			}
+		}
+		
 		System.out.println(Thread.currentThread().getName() + " ends successfully!");
 	}
 	
@@ -403,67 +435,13 @@ public class XiamiArtistCrawler implements Runnable {
 		System.setProperty("org.apache.commons.logging.Log", "org.apache.commons.logging.impl.NoOpLog");
 //		java.util.logging.Logger.getLogger("").setLevel(Level.OFF); 
 //		org.apache.log4j.Logger.getLogger("").setLevel(org.apache.log4j.Level.FATAL);     
-
-
 	}
 	      
 	
 	public static void main(String[] args) throws Exception {
-
-//		java.util.logging.Logger.getLogger("").setLevel(Level.OFF); 
-//		org.apache.log4j.Logger.getLogger("").setLevel(org.apache.log4j.Level.FATAL);    
-//		org.apache.commons.logging.LogFactory.getFactory().setAttribute("org.apache.commons.logging.Log", "org.apache.commons.logging.impl.NoOpLog");
-//			
-//		org.apache.log4j.Logger.getRootLogger().setLevel(org.apache.log4j.Level.FATAL);
-//		java.util.logging.Logger.getGlobal().setLevel(Level.OFF);
-//		org.apache.log4j.Logger.getRootLogger().removeAllAppenders();
-//		org.apache.log4j.Logger.getRootLogger().addAppender(new NullAppender());
-		
-//		org.apache.log4j.Logger.getLogger("com.gargoylesoftware.htmlunit").setLevel(org.apache.log4j.Level.FATAL); 
-//		org.apache.log4j.Logger.getLogger("org.apache.commons.httpclient").setLevel(org.apache.log4j.Level.FATAL);
-//		org.apache.log4j.Logger.getLogger("com.gargoylesoftware.htmlunit.javascript").setLevel(org.apache.log4j.Level.FATAL);
-//		org.apache.log4j.Logger.getLogger("com.gargoylesoftware").setLevel(org.apache.log4j.Level.FATAL);
-//		org.apache.log4j.Logger.getLogger("com.gargoylesoftware.htmlunit.javascript.background.JavaScriptJobManagerImpl").setLevel(org.apache.log4j.Level.FATAL);
-//		org.apache.log4j.Logger.getLogger("com.gargoylesoftware.htmlunit.javascript.host.html.HTMLScriptElement").setLevel(org.apache.log4j.Level.FATAL);
-//		org.apache.log4j.Logger.getLogger("org.apache.http").setLevel(org.apache.log4j.Level.FATAL);
-//		org.apache.log4j.Logger.getLogger("org.apache.http.headers").setLevel(org.apache.log4j.Level.FATAL);
-//		org.apache.log4j.Logger.getLogger("org.apache.http.wire").setLevel(org.apache.log4j.Level.FATAL);
-//		org.apache.log4j.Logger.getLogger("org.apache.commons").setLevel(org.apache.log4j.Level.FATAL);
-//		org.apache.log4j.Logger.getLogger("org.apache.commons.httpclient.wire").setLevel(org.apache.log4j.Level.FATAL);
-//		org.apache.log4j.Logger.getLogger("gargoylesoftware.htmlunit.WebTestCase").setLevel(org.apache.log4j.Level.FATAL);
-//		org.apache.log4j.Logger.getLogger("gargoylesoftware.htmlunit.javascript.DebugFrameImpl").setLevel(org.apache.log4j.Level.FATAL);	    
-//		
-  
-//		org.apache.commons.logging.LogFactory.getFactory().setAttribute("org.apache.commons.logging.Log", "org.apache.commons.logging.impl.NoOpLog");	
-
-//		java.util.logging.Logger.getLogger("org.mozilla").setLevel(Level.OFF); 
-//		java.util.logging.Logger.getLogger("org.mozilla.javascript").setLevel(Level.OFF); 
-//		java.util.logging.Logger.getLogger("sun.org.mozilla").setLevel(Level.OFF); 
-//		java.util.logging.Logger.getLogger("sun.org.mozilla.javascript").setLevel(Level.OFF); 
-//		
-//		
-//		java.util.logging.Logger.getLogger("com.gargoylesoftware.htmlunit").setLevel(Level.OFF); 
-//		java.util.logging.Logger.getLogger("org.apache.commons.httpclient").setLevel(Level.OFF);
-//		java.util.logging.Logger.getLogger("com.gargoylesoftware.htmlunit.javascript").setLevel(Level.OFF);
-//		java.util.logging.Logger.getLogger("com.gargoylesoftware").setLevel(Level.OFF);
-//		java.util.logging.Logger.getLogger("com.gargoylesoftware.htmlunit.javascript.background").setLevel(Level.OFF);
-//		java.util.logging.Logger.getLogger("com.gargoylesoftware.htmlunit.javascript.host.html").setLevel(Level.OFF);
-//		java.util.logging.Logger.getLogger("com.gargoylesoftware.htmlunit.javascript.host").setLevel(Level.OFF);
-//		java.util.logging.Logger.getLogger("org.apache.http").setLevel(Level.OFF);
-//		java.util.logging.Logger.getLogger("org.apache.http.headers").setLevel(Level.OFF);
-//		java.util.logging.Logger.getLogger("org.apache.http.wire").setLevel(Level.OFF);
-//		java.util.logging.Logger.getLogger("org.apache.commons").setLevel(Level.OFF);
-//		java.util.logging.Logger.getLogger("org.apache.commons.httpclient.wire").setLevel(Level.OFF);
-//		java.util.logging.Logger.getLogger("gargoylesoftware.htmlunit.WebTestCase").setLevel(Level.OFF);
-//		java.util.logging.Logger.getLogger("gargoylesoftware.htmlunit.javascript.DebugFrameImpl").setLevel(Level.OFF);
-//
-
-
-
-
 		
 		
-		int maxThreads = 10;
+		int maxThreads = 20;
 		String[] artistIDs = new String[]{"dz264c5b", "ihyffebb", "6in9397a", "0d5492a", "iim17edb", "djGc4149", 
 				"O9fc383", "573", "2017", "135", "57908", "bhu21804", "hf0143fd", "sGE39222", "K1z4dbb3", 
 				"1198", "fHIe070b", "3110", "xIW446b0", "Ksd4688", "9K9c05a", "198ed78", "vuV4030c", "be6yda0f8", 
