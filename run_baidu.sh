@@ -3,4 +3,6 @@ find src -name *.java > src/sources.list
 
 mkdir -p bin
 javac -cp .:$classpath -s src -d bin @src/sources.list
-java -cp .:bin:$classpath com.baidu.LongCrawler
+nohup java -cp .:bin:$classpath com.baidu.LongCrawler > nohup.baidu&
+sleep 3
+tail -f nohup.baidu
