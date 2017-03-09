@@ -412,7 +412,7 @@ public class XiamiArtistCrawler implements Runnable {
 					new FileInputStream(filepath), "UTF-8"));
 			String line = null;
 			while( (line = bufr.readLine())!=null ) {
-				String[] tmps = line.split(" ");
+				String[] tmps = line.split(",");
 				DefaultCredentialsProvider scp = new DefaultCredentialsProvider();
 				//61.160.221.41 888 tyt0308 tyt0308
 				scp.addCredentials(tmps[2], tmps[3], tmps[0], Integer.parseInt(tmps[1]), null);
@@ -464,7 +464,7 @@ public class XiamiArtistCrawler implements Runnable {
 		int port;
 		public MyProxy(String line) {
 			this.line = line;
-			String[] tmps = line.split(" ");
+			String[] tmps = line.split(",");
 			host = tmps[0];
 			port = Integer.parseInt(tmps[1]);
 			username = tmps[2];
