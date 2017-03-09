@@ -147,7 +147,7 @@ public class XiamiArtistCrawler implements Runnable {
 //				}
 				//webClient.setCookieManager(cookieManager);
 				if(providerList!=null && providerList.size()>0) {
-					int idx = Math.abs(pageID.hashCode()) % providerList.size();
+					int idx = Math.abs((pageID+System.currentTimeMillis()).hashCode()) % providerList.size();
 					webClient.setCredentialsProvider(providerList.get(idx));
 				}
 
@@ -431,7 +431,7 @@ public class XiamiArtistCrawler implements Runnable {
 				if(myproxyList!=null && myproxyList.size()>0) {
 					URL url = new URL(urlStr);
 					URLConnection conn;
-					int idx = Math.abs(urlStr.hashCode()) % myproxyList.size();
+					int idx = Math.abs((urlStr+System.currentTimeMillis()).hashCode()) % myproxyList.size();
 					InetSocketAddress addr = new InetSocketAddress(myproxyList.get(idx).host, myproxyList.get(idx).port);  
 			        Proxy proxy = new Proxy(Proxy.Type.HTTP, addr);
 			        String headerkey = "Proxy-Authorization";
