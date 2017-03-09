@@ -112,7 +112,7 @@ public class XiamiArtistCrawler implements Runnable {
 			}
 		}
 		
-		while(cnt<3)
+		while(true)
 		{
 			String pageID;
 			int delay;
