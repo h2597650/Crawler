@@ -3,12 +3,16 @@ package com.xiami;
 import java.util.*;
 import java.util.Map.Entry;
 import java.io.*;
+import java.net.InetSocketAddress;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.net.URLConnection;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 import java.util.regex.*;
+import java.net.Proxy;
 
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.logging.LogFactory;
 import org.jsoup.Connection;
 import org.jsoup.Connection.Method;
@@ -50,6 +54,7 @@ public class XiamiArtistCrawler implements Runnable {
 	private Object writeLock, fetchLock;
 	private ArrayList<Map.Entry<String, Integer>> proxyList = null;
 	private ArrayList<DefaultCredentialsProvider> providerList = null;
+	private ArrayList<MyProxy> myproxyList = null;
 	
 	private Map<String, String> userCookies;
 	private CookieManager cookieManager;
@@ -107,7 +112,7 @@ public class XiamiArtistCrawler implements Runnable {
 			}
 		}
 		
-		while(cnt<100)
+		while(cnt<3)
 		{
 			String pageID;
 			int delay;
@@ -267,13 +272,10 @@ public class XiamiArtistCrawler implements Runnable {
 			BufferedWriter bufw;
 			try {
 				// extract album list
-				String alubmurl = baseUrl + "album-" + artistID;
-				Document albumMainPage = Jsoup
-						.connect(alubmurl)
-						.userAgent("Mozilla/5.0 (Windows; U; WindowsNT 5.1; en-US; rv2.0.1.6) Gecko/20140725 Firefox/2.0.0.6")
-						.referrer("http://www.xiami.com").timeout(5000 + delay)
-						.get();
-				Element albumCntEle = albumMainPage.select("div.cate_viewmode").select(".clearfix >p.counts").first();
+				String alubmMainUrl = baseUrl + "album-" + artistID;
+				String albumMainPage = proxyConnect(alubmMainUrl, 5000+delay);
+				Document albumMainDoc = Jsoup.parse(albumMainPage);
+				Element albumCntEle = albumMainDoc.select("div.cate_viewmode").select(".clearfix >p.counts").first();
 				int numsFirst = 0, numsLast = 0;
 				for (int i = 0; i < albumCntEle.text().length(); ++i)
 					if (Character.isDigit(albumCntEle.text().charAt(i))) {
@@ -289,12 +291,9 @@ public class XiamiArtistCrawler implements Runnable {
 				int albumPageCnt = (albumCnt - 1) / 9 + 1;
 				ArrayList<String> albumList = new ArrayList<String>();
 				for (int idx = 1; idx <= albumPageCnt; ++idx) {
-					Document albumsPage = Jsoup
-							.connect(alubmurl + "?page=" + idx)
-							.userAgent("Mozilla/5.0 (Windows; U; WindowsNT 5.1; en-US; rv1.5.1.6) Gecko/20070725 Firefox/2.0.0.6")
-							.referrer("http://www.xiami.com")
-							.timeout(5000 + delay).get();
-					Elements albumEles = albumsPage.select("div.album_item100_thread > div.info a.CDcover100");
+					String albumsPage = proxyConnect(alubmMainUrl + "?page=" + idx, 5000+delay);
+					Document albumsDoc = Jsoup.parse(albumsPage);
+					Elements albumEles = albumsDoc.select("div.album_item100_thread > div.info a.CDcover100");
 
 					for (Element albumEle : albumEles) {
 						String albumHref = albumEle.attr("href");
@@ -306,33 +305,27 @@ public class XiamiArtistCrawler implements Runnable {
 				// save album pages
 				for (String albumID : albumList) {
 					String albumURL = "http://www.xiami.com/album/" + albumID;
-					Document albumPage = Jsoup
-							.connect(albumURL)
-							.userAgent("Mozilla/5.0 (Windows; U; WindowsNT 5.1; en-US; rv2.1.1.6) Gecko/20090725 Firefox/2.0.0.6")
-							.referrer("http://www.xiami.com")
-							.timeout(5000 + delay).get();
+					String albumPage = proxyConnect(albumURL, 5000+delay);
+					Document albumDoc = Jsoup.parse(albumPage);
 					String folder = basePath + mkdirLevel(artistID);
 					String albumFolder = folder + "/" + albumID;
 					new File(albumFolder).mkdirs();
 					bufw = new BufferedWriter(new OutputStreamWriter(
 							new FileOutputStream(albumFolder + "/" + albumID + ".album"), "UTF-8"));
-					bufw.write(annotateURL(albumURL) + albumPage.html());
+					bufw.write(annotateURL(albumURL) + albumDoc.html());
 					bufw.close();
 					System.out.println(Thread.currentThread().getName() + " saved album : " + albumID);
 
-					Elements songEles = albumPage.select("td.song_name");
+					Elements songEles = albumDoc.select("td.song_name");
 					for (Element songEle : songEles) {
 						String songHref = songEle.select("a").first().attr("href");
 						songHref = extractID(songHref);
 						String songURL = "http://www.xiami.com/song/" + songHref;
-						Document songPage = Jsoup
-								.connect(songURL)
-								.userAgent("Mozilla/5.0 (Windows; U; WindowsNT 5.1; en-US; rv1.8.1.6) Gecko/20130725 Firefox/2.0.0.6")
-								.referrer("http://www.xiami.com")
-								.timeout(5000 + delay).get();
+						String songPage = proxyConnect(songURL, 5000+delay);
+						Document songDoc = Jsoup.parse(songPage);
 						bufw = new BufferedWriter(new OutputStreamWriter(
 								new FileOutputStream(albumFolder + "/" + songHref + ".song"), "UTF-8"));
-						bufw.write(annotateURL(songURL) + songPage.html());
+						bufw.write(annotateURL(songURL) + songDoc.html());
 						bufw.close();
 						System.out.println(Thread.currentThread().getName() + " saved song : " + songHref);
 					}
@@ -343,7 +336,6 @@ public class XiamiArtistCrawler implements Runnable {
 					artistList.put(artistID, delay + 1000);
 				}
 				e.printStackTrace();
-				System.exit(-1);
 			}
 		}
 		
@@ -412,6 +404,7 @@ public class XiamiArtistCrawler implements Runnable {
 	
 	public void setProvider(String filepath)
 	{
+		myproxyList = new ArrayList<MyProxy>();
 		providerList = new ArrayList<DefaultCredentialsProvider>();
 		BufferedReader bufr;
 		try {
@@ -424,10 +417,62 @@ public class XiamiArtistCrawler implements Runnable {
 				//61.160.221.41 888 tyt0308 tyt0308
 				scp.addCredentials(tmps[2], tmps[3], tmps[0], Integer.parseInt(tmps[1]), null);
 				providerList.add(scp);
+				myproxyList.add(new MyProxy(line));
 			}
 			bufr.close();
 		} catch (Exception e) {
 			e.printStackTrace();
+		}
+	}
+	
+	public String proxyConnect(String urlStr, int delay) throws Exception {
+		while(true) {
+			try{
+				if(myproxyList!=null && myproxyList.size()>0) {
+					URL url = new URL(urlStr);
+					URLConnection conn;
+					int idx = Math.abs(urlStr.hashCode()) % myproxyList.size();
+					InetSocketAddress addr = new InetSocketAddress(myproxyList.get(idx).host, myproxyList.get(idx).port);  
+			        Proxy proxy = new Proxy(Proxy.Type.HTTP, addr);
+			        String headerkey = "Proxy-Authorization";
+			        String headStr = myproxyList.get(idx).username+":"+myproxyList.get(idx).password;
+		            String headerValue = "Basic "+ Base64.getEncoder().encodeToString(headStr.getBytes());
+		            conn = url.openConnection(proxy);
+		            conn.setConnectTimeout(delay);
+		            conn.setRequestProperty(headerkey, headerValue);
+		            //System.out.println(myproxyList.get(idx));
+		            InputStream inPage = conn.getInputStream();
+		            return IOUtils.toString(inPage, "utf-8");
+				} else{
+					Document pageDoc = Jsoup
+							.connect(urlStr)
+							.userAgent("Mozilla/5.0 (Windows; U; WindowsNT 5.1; en-US; rv2.0.1.6) Gecko/20140725 Firefox/2.0.0.6")
+							.referrer("http://www.xiami.com").timeout(delay)
+							.get();
+					return pageDoc.html();
+				}
+			} catch (IOException e) {
+				delay += 1000;
+				if(delay>100000)
+					return "";
+			}
+		}
+	}
+	
+	class MyProxy{
+		public String host, username, password, line;
+		int port;
+		public MyProxy(String line) {
+			this.line = line;
+			String[] tmps = line.split(" ");
+			host = tmps[0];
+			port = Integer.parseInt(tmps[1]);
+			username = tmps[2];
+			password = tmps[3];
+		}
+		
+		public String toString() {
+			return line;
 		}
 	}
 	
