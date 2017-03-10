@@ -132,13 +132,13 @@ public class XiamiArtistCrawler implements Runnable {
 			try {
 				
 				WebClient webClient=new WebClient(BrowserVersion.FIREFOX_45);
-				webClient.setJavaScriptTimeout(10000);
+				webClient.setJavaScriptTimeout(10000+delay);
 				webClient.getOptions().setThrowExceptionOnScriptError(false);
 				webClient.getOptions().setThrowExceptionOnFailingStatusCode(false);
-				webClient.getOptions().setTimeout(10000);
+				webClient.getOptions().setTimeout(10000+delay);
 				webClient.getOptions().setCssEnabled(false);
 				webClient.getOptions().setJavaScriptEnabled(true);
-				webClient.waitForBackgroundJavaScript(10000);
+				webClient.waitForBackgroundJavaScript(10000+delay);
 				webClient.setAjaxController(new NicelyResynchronizingAjaxController());
 //				if(proxyList!=null && proxyList.size()>0) {
 //					int idx = Math.abs(pageID.hashCode()) % proxyList.size();
@@ -198,13 +198,12 @@ public class XiamiArtistCrawler implements Runnable {
 				bufw.close();
 				
 				
-				
 				synchronized (this.crawledList)
 		        {
 					cnt++;
 		        	crawledList.add(pageID);
 		        	if(cnt%100==0)
-						System.out.println("SongsCnt : " + cnt + ", toCrawlList : " + toCrawlList.size());
+						System.out.println("ArtistsCnt : " + cnt + ", toCrawlList : " + toCrawlList.size());
 		        	System.out.println(Thread.currentThread().getName() + " saved artist : " + pageID);
 		        }
 				synchronized (this.crawledList)
@@ -265,6 +264,8 @@ public class XiamiArtistCrawler implements Runnable {
 				artistID = idEntry.getKey();
 				delay = idEntry.getValue();
 				artistList.remove(artistID);
+		        if(artistList.size()%100==0)
+					System.out.println("toCrawlList : " + artistList.size());
 			}
 			if(delay>10000)
 				continue;
