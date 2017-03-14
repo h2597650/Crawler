@@ -11,6 +11,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 import java.util.regex.*;
 import java.net.Proxy;
+import java.io.File;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.logging.LogFactory;
@@ -195,19 +196,19 @@ public class XiamiArtistCrawler implements Runnable {
 				}
 				webClient.close();
 				// save page
-				String folder = basePath + mkdirLevel(pageID);
-				new File(folder).mkdirs();
-				BufferedWriter bufw = new BufferedWriter(new OutputStreamWriter(
-						new FileOutputStream(folder+"/"+pageID+".artist"), "UTF-8"));
-				bufw.write(annotateURL(pageurl) + htmlPage.asXml());
-				bufw.close();
+				String folder = basePath + mkdirLevel(pageID) + "/" + pageID;
+				mkdirs(folder);
+				try (BufferedWriter bufw = new BufferedWriter(new OutputStreamWriter(
+						new FileOutputStream(folder + "/" + pageID+".artist"), "UTF-8"))){
+					bufw.write(annotateURL(pageurl) + htmlPage.asXml());
+					bufw.close();
+				}
 				
 				
 				synchronized (this.crawledList)
 		        {
 					cnt++;
 		        	crawledList.add(pageID);
-		        	System.out.println(crawledList.size());
 		        	if(cnt%100==0)
 						System.out.println("ArtistsCnt : " + cnt +", toCrawlList : " + toCrawlList.size());
 		        	System.out.println(Thread.currentThread().getName() + " saved artist : " + pageID);
@@ -281,7 +282,6 @@ public class XiamiArtistCrawler implements Runnable {
 			if(delay>10000)
 				continue;
 			String pageurl = baseUrl + artistID;
-			BufferedWriter bufw;
 			try {
 				// extract album list
 				String alubmMainUrl = baseUrl + "album-" + artistID;
@@ -319,13 +319,14 @@ public class XiamiArtistCrawler implements Runnable {
 					String albumURL = "http://www.xiami.com/album/" + albumID;
 					String albumPage = proxyConnect(albumURL, 5000+delay);
 					Document albumDoc = Jsoup.parse(albumPage);
-					String folder = basePath + mkdirLevel(artistID);
-					String albumFolder = folder + "/" + albumID;
-					new File(albumFolder).mkdirs();
-					bufw = new BufferedWriter(new OutputStreamWriter(
-							new FileOutputStream(albumFolder + "/" + albumID + ".album"), "UTF-8"));
-					bufw.write(annotateURL(albumURL) + albumDoc.html());
-					bufw.close();
+					String folder = basePath + mkdirLevel(artistID) + "/" + artistID;
+					String albumFolder = folder + "/" +albumID;
+					mkdirs(albumFolder);
+					try ( BufferedWriter bufw = new BufferedWriter(new OutputStreamWriter(
+							new FileOutputStream(albumFolder + "/" + albumID + ".album"), "UTF-8"))) {
+						bufw.write(annotateURL(albumURL) + albumDoc.html());
+						bufw.close();
+					}
 					System.out.println(Thread.currentThread().getName() + " saved album : " + albumID);
 
 					Elements songEles = albumDoc.select("td.song_name");
@@ -335,10 +336,11 @@ public class XiamiArtistCrawler implements Runnable {
 						String songURL = "http://www.xiami.com/song/" + songHref;
 						String songPage = proxyConnect(songURL, 5000+delay);
 						Document songDoc = Jsoup.parse(songPage);
-						bufw = new BufferedWriter(new OutputStreamWriter(
-								new FileOutputStream(albumFolder + "/" + songHref + ".song"), "UTF-8"));
-						bufw.write(annotateURL(songURL) + songDoc.html());
-						bufw.close();
+						try (BufferedWriter bufw = new BufferedWriter(new OutputStreamWriter(
+								new FileOutputStream(albumFolder + "/" + songHref + ".song"), "UTF-8"))){
+							bufw.write(annotateURL(songURL) + songDoc.html());
+							bufw.close();
+						}
 						System.out.println(Thread.currentThread().getName() + " saved song : " + songHref);
 					}
 				}
@@ -470,8 +472,8 @@ public class XiamiArtistCrawler implements Runnable {
 				}
 			} catch (IOException e) {
 				delay += 1000;
-				if(delay>100000)
-					return "";
+				if(delay>10000)
+					throw e;
 			    try {
 			    	Thread.sleep(10000);
 			    } catch (InterruptedException ei) {
@@ -479,6 +481,11 @@ public class XiamiArtistCrawler implements Runnable {
 			    }
 			}
 		}
+	}
+	
+	public boolean mkdirs(String folder) {
+		File f = new File(folder);
+		return f.mkdirs();
 	}
 	
 	class MyProxy{
