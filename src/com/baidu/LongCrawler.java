@@ -77,6 +77,10 @@ public class LongCrawler implements Runnable {
 				delay = idEntry.getValue();
 				toCrawlList.remove(pageID);
 			}
+			synchronized (this.crawledList) {
+				if (crawledList.contains(pageID))
+					continue;
+			}
 			if(delay>10000)
 				continue;
 			String pageurl = baseUrl + pageID;

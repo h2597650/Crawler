@@ -125,6 +125,10 @@ public class XiamiArtistCrawler implements Runnable {
 				delay = idEntry.getValue();
 				toCrawlList.remove(pageID);
 			}
+			synchronized (this.crawledList) {
+				if (crawledList.contains(pageID))
+					continue;
+			}
 			if(delay>10000)
 				continue;
 			String pageurl = baseUrl + pageID;
@@ -203,8 +207,9 @@ public class XiamiArtistCrawler implements Runnable {
 		        {
 					cnt++;
 		        	crawledList.add(pageID);
+		        	System.out.println(crawledList.size());
 		        	if(cnt%100==0)
-						System.out.println("ArtistsCnt : " + cnt + ", toCrawlList : " + toCrawlList.size());
+						System.out.println("ArtistsCnt : " + cnt +", toCrawlList : " + toCrawlList.size());
 		        	System.out.println(Thread.currentThread().getName() + " saved artist : " + pageID);
 		        }
 				synchronized (this.crawledList)
