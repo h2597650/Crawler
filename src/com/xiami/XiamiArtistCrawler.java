@@ -155,13 +155,14 @@ public class XiamiArtistCrawler implements Runnable {
 				htmlPage  = (HtmlPage) webClient.getPage(pageurl);
 				// load js and ajax
 				HtmlEmphasis playCnt_ele;
-				do {
+				for(int i = 0; i < 20; ++i) {
 					playCnt_ele = (HtmlEmphasis)htmlPage.getBody().getElementsByAttribute("em", "id", "play_count_num").get(0);
+                    if (playCnt_ele.getTextContent().length()>0)
+                        break;
 					synchronized (htmlPage) {
 						htmlPage.wait(500);
 					}
-				} while(playCnt_ele.getTextContent().length()==0);
-
+                }
 				// parse two types
 				//http://www.xiami.com/artist/dz264c5b
 				HashSet<String> hrefSet_tmp = new HashSet<String>(), hrefSet = new HashSet<String>();
@@ -228,6 +229,11 @@ public class XiamiArtistCrawler implements Runnable {
 				}
 				e.printStackTrace();
 		        //System.out.println(htmlPage.asXml());
+			    try {
+			    	Thread.sleep(10000);
+			    } catch (InterruptedException ei) {
+			    	ei.printStackTrace();
+			    }
 			}
 		}
 		if(Thread.currentThread().getName().equals("Thread 0"))
@@ -337,6 +343,11 @@ public class XiamiArtistCrawler implements Runnable {
 					artistList.put(artistID, delay + 1000);
 				}
 				e.printStackTrace();
+			    try {
+			    	Thread.sleep(10000);
+			    } catch (InterruptedException ei) {
+			    	ei.printStackTrace();
+			    }
 			}
 		}
 		
@@ -456,6 +467,11 @@ public class XiamiArtistCrawler implements Runnable {
 				delay += 1000;
 				if(delay>100000)
 					return "";
+			    try {
+			    	Thread.sleep(10000);
+			    } catch (InterruptedException ei) {
+			    	ei.printStackTrace();
+			    }
 			}
 		}
 	}
