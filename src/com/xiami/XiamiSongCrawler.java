@@ -324,7 +324,7 @@ public class XiamiSongCrawler implements Runnable {
 	public static void main(String[] args) throws Exception {
 		
 		
-		int maxThreads = 20;
+		int maxThreads = 40;
 		XiamiSongCrawler crawler = new XiamiSongCrawler("http://www.xiami.com/artist/", "xiami/artist.list", 1000L, "xiami/");
 //		crawler.setProxy("config/proxy.txt");
 		crawler.setProvider("config/provider.txt");
