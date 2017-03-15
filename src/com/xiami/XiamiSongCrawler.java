@@ -73,10 +73,8 @@ public class XiamiSongCrawler implements Runnable {
 		toCrawlList = new LinkedHashMap<String,Integer>();
 		artistList = new LinkedHashMap<String,Integer>();
 		
-		BufferedReader bufr;
-		try {
-			bufr = new BufferedReader(new InputStreamReader(
-					new FileInputStream(artistFile), "UTF-8"));
+		try ( BufferedReader bufr = new BufferedReader(new InputStreamReader(
+				new FileInputStream(artistFile), "UTF-8"))) {
 			String line = null;
 			while( (line = bufr.readLine())!=null ) {
 				artistList.put(line, 0);
