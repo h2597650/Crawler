@@ -537,7 +537,7 @@ public class XiamiArtistCrawler implements Runnable {
 		XiamiArtistCrawler crawler = new XiamiArtistCrawler("http://www.xiami.com/artist/", artistIDs, 1000L, "xiami/");
 //		crawler.login("15010700399","2517399LK");
 //		crawler.setProxy("proxy.txt");
-		crawler.setProvider("provider.txt");
+		crawler.setProvider("config/provider.txt");
 		ArrayList<Thread> threads = new ArrayList<Thread>();
 		for (int i = 0; i < maxThreads; i++) {
 			threads.add(new Thread(crawler,"Thread "+i));
