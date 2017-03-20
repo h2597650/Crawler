@@ -80,11 +80,6 @@ public class XiamiMysql {
 					}
 				Thread parserThread = new Thread(parser);
 				parserThread.start();
-				try {
-					parserThread.join();
-				} catch (InterruptedException e) {
-					e.printStackTrace();
-				}
 				flag = false;
 				break;
 			}
@@ -147,8 +142,13 @@ public class XiamiMysql {
 		XiamiMysql xiamiMysql = new XiamiMysql("root", "root", "config/create.sql");
 		xiamiMysql.createDataBase();
 		xiamiMysql.traverseFolder("xiami");
+		while(PageParser.count.get()>0)
+			try {
+				Thread.sleep(1000);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
 		xiamiMysql.saveSimilarArtist();
-		CountDownLatch latch = new CountDownLatch(2);
 	}
 
 }
