@@ -125,7 +125,7 @@ public class XiamiMysql {
 					}
 					stmt = conn.prepareStatement("replace into artist_simlar values (?,?)");
 					stmt.setLong(1, artist.artist_id);
-					stmt.setLong(1, similar_id);
+					stmt.setLong(2, similar_id);
 					stmt.executeUpdate();
 					stmt.close();
 				}
