@@ -71,9 +71,9 @@ public class XiamiMysql {
 		for(File file : files) {
 			if(file.getName().contains(".artist")) {
 				PageParser parser = new PageParser(conn, artistList, file.getPath());
-				while(PageParser.count.get()>20)
+				while(PageParser.count.get()>40)
 					try {
-						Thread.sleep(100);
+						Thread.sleep(500);
 					} catch (InterruptedException e) {
 						e.printStackTrace();
 					}
