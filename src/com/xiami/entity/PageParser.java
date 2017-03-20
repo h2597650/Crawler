@@ -210,13 +210,13 @@ public class PageParser implements Runnable {
 	}
 	
 	private String fileContent(String file) {
-		try {
-        	InputStream inPage = new FileInputStream(file);
-			return  IOUtils.toString(inPage, "utf-8");
+		String ret = null;
+		try (InputStream inPage = new FileInputStream(file)) {
+			ret = IOUtils.toString(inPage, "utf-8");
 		} catch (IOException e) {
 			e.printStackTrace();
-			return null;
 		}
+		return ret;
 	}
 	
 	private String extractID(String href) {
