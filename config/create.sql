@@ -44,13 +44,13 @@ create table songs (
 	index(album_id)
 ) engine=MyISAM;
 
-drop table if exists artist_simlar;
-create table artist_simlar (
+drop table if exists artist_similar;
+create table artist_similar (
 	artist_id int(12),
-	simlar_id int(12),
-	primary key (artist_id,simlar_id),
+	similar_id int(12),
+	primary key (artist_id,similar_id),
 	index(artist_id),
-	index(simlar_id)
+	index(similar_id)
 ) engine=MyISAM;
 
 drop table if exists genres;
