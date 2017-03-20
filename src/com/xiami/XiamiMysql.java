@@ -6,6 +6,7 @@ import java.io.InputStream;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.concurrent.CountDownLatch;
 
 import org.apache.commons.io.IOUtils;
 
@@ -79,6 +80,11 @@ public class XiamiMysql {
 					}
 				Thread parserThread = new Thread(parser);
 				parserThread.start();
+				try {
+					parserThread.join();
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}
 				flag = false;
 				break;
 			}
@@ -108,6 +114,7 @@ public class XiamiMysql {
 				long artist_id = rs.getLong("artist_id");
 				String str_id = rs.getString("str_id");
 				//id2strMap.put(artist_id, str_id);
+				//System.out.println(artist_id + "," + str_id);
 				str2idMap.put(str_id, artist_id);
 			}
 			stmt.close();
@@ -140,7 +147,8 @@ public class XiamiMysql {
 		XiamiMysql xiamiMysql = new XiamiMysql("root", "root", "config/create.sql");
 		xiamiMysql.createDataBase();
 		xiamiMysql.traverseFolder("xiami");
-		//xiamiMysql.saveSimilarArtist();
+		xiamiMysql.saveSimilarArtist();
+		CountDownLatch latch = new CountDownLatch(2);
 	}
 
 }
