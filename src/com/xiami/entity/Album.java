@@ -21,7 +21,7 @@ public class Album implements SqlEntity{
 		try {
 			PreparedStatement stmt;
 			// albums
-			stmt = conn.prepareStatement("replace delayed into albums values(?,?,?,?,?,?,?,?,?,?,?,?,?)");
+			stmt = conn.prepareStatement("insert delayed into albums values(?,?,?,?,?,?,?,?,?,?,?,?,?)");
 			stmt.setLong(1, album_id);
 			stmt.setString(2, str_id);
 			stmt.setString(3, name);
@@ -39,7 +39,7 @@ public class Album implements SqlEntity{
 			stmt.close();
 			// album_genre
 			for(long genre_id : genres) {
-				stmt = conn.prepareStatement("replace delayed into album_genre values(?,?)");
+				stmt = conn.prepareStatement("insert delayed into album_genre values(?,?)");
 				stmt.setLong(1, album_id);
 				stmt.setLong(2, genre_id);
 				stmt.executeUpdate();
@@ -47,7 +47,7 @@ public class Album implements SqlEntity{
 			}
 			// album_tag
 			for(long tag_id : tags) {
-				stmt = conn.prepareStatement("replace delayed into album_tag values(?,?)");
+				stmt = conn.prepareStatement("insert delayed into album_tag values(?,?)");
 				stmt.setLong(1, album_id);
 				stmt.setLong(2, tag_id);
 				stmt.executeUpdate();

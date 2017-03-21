@@ -17,7 +17,7 @@ public class Song implements SqlEntity{
 		try {
 			PreparedStatement stmt;
 			// songs
-			stmt = conn.prepareStatement("replace delayed into songs values(?,?,?,?,?,?,?)");
+			stmt = conn.prepareStatement("insert delayed into songs values(?,?,?,?,?,?,?)");
 			stmt.setLong(1, song_id);
 			stmt.setString(2, str_id);
 			stmt.setString(3, name);
@@ -29,14 +29,14 @@ public class Song implements SqlEntity{
 			stmt.executeUpdate();
 			stmt.close();
 			// song_artist
-			stmt = conn.prepareStatement("replace delayed into song_artist values(?,?)");
+			stmt = conn.prepareStatement("insert delayed into song_artist values(?,?)");
 			stmt.setLong(1, song_id);
 			stmt.setLong(2, artist_id);
 			stmt.executeUpdate();
 			stmt.close();
 			// song_tag
 			for(long tag_id : tags) {
-				stmt = conn.prepareStatement("replace delayed into song_tag values(?,?)");
+				stmt = conn.prepareStatement("insert delayed into song_tag values(?,?)");
 				stmt.setLong(1, song_id);
 				stmt.setLong(2, tag_id);
 				stmt.executeUpdate();

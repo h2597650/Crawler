@@ -6,6 +6,8 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 
+import com.mysql.jdbc.exceptions.jdbc4.MySQLIntegrityConstraintViolationException;
+
 public class Artist implements SqlEntity{
 	public long artist_id;
 	public String str_id = "";
@@ -21,7 +23,7 @@ public class Artist implements SqlEntity{
 		try {
 			PreparedStatement stmt;
 			// artists
-			stmt = conn.prepareStatement("replace delayed into artists values(?,?,?,?,?,?)");
+			stmt = conn.prepareStatement("insert delayed into artists values(?,?,?,?,?,?)");
 			stmt.setLong(1, artist_id);
 			stmt.setString(2, str_id);
 			stmt.setString(3, name);
@@ -32,7 +34,7 @@ public class Artist implements SqlEntity{
 			stmt.close();
 			// artist_tag
 			for(long tag_id : tags) {
-				stmt = conn.prepareStatement("replace delayed into artist_tag values(?,?)");
+				stmt = conn.prepareStatement("insert delayed into artist_tag values(?,?)");
 				stmt.setLong(1, artist_id);
 				stmt.setLong(2, tag_id);
 				stmt.executeUpdate();
@@ -40,7 +42,7 @@ public class Artist implements SqlEntity{
 			}
 			// artist_genre
 			for(long genre_id : genres) {
-				stmt = conn.prepareStatement("replace delayed into artist_genre values(?,?)");
+				stmt = conn.prepareStatement("insert delayed into artist_genre values(?,?)");
 				stmt.setLong(1, artist_id);
 				stmt.setLong(2, genre_id);
 				stmt.executeUpdate();
@@ -52,6 +54,9 @@ public class Artist implements SqlEntity{
 				album.save2DB(conn);
 			}
 			return true;
+		} catch (MySQLIntegrityConstraintViolationException e) {
+			//e.printStackTrace();
+			return false;
 		} catch (SQLException e) {
 			e.printStackTrace();
 			return false;

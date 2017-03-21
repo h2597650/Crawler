@@ -15,6 +15,8 @@ import org.jsoup.nodes.Document;
 import org.jsoup.select.Elements;
 import org.jsoup.nodes.Element;
 
+import com.mysql.jdbc.exceptions.jdbc4.MySQLIntegrityConstraintViolationException;
+
 public class PageParser implements Runnable {
 	private Connection conn = null;
 	private ArrayList<Artist> artistList;
@@ -238,12 +240,15 @@ public class PageParser implements Runnable {
 	
 	private boolean insertGenre(long genre_id, String genre) {
 		try {
-			PreparedStatement stmt = conn.prepareStatement("replace into genres values(?,?)");
+			PreparedStatement stmt = conn.prepareStatement("insert delayed into genres values(?,?)");
 			stmt.setLong(1, genre_id);
 			stmt.setString(2, genre);
 			stmt.executeUpdate();
 			stmt.close();
 			return true;
+		} catch (MySQLIntegrityConstraintViolationException e) {
+			//e.printStackTrace();
+			return false;
 		} catch (SQLException e) {
 			e.printStackTrace();
 			return false;
@@ -252,12 +257,15 @@ public class PageParser implements Runnable {
 	
 	private boolean insertTag(long tag_id, String tag) {
 		try {
-			PreparedStatement stmt = conn.prepareStatement("replace into tags values(?,?)");
+			PreparedStatement stmt = conn.prepareStatement("insert delayed into tags values(?,?)");
 			stmt.setLong(1, tag_id);
 			stmt.setString(2, tag);
 			stmt.executeUpdate();
 			stmt.close();
 			return true;
+		} catch (MySQLIntegrityConstraintViolationException e) {
+			//e.printStackTrace();
+			return false;
 		} catch (SQLException e) {
 			e.printStackTrace();
 			return false;
