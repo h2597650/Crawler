@@ -43,6 +43,7 @@ public class PageParser implements Runnable {
 				System.out.println(Thread.currentThread().getName() + " parsed artist : " + artist.artist_id + ", " +artist.name);
 			}
 		}
+        System.out.println(Thread.currentThread().getName() + " ended!");
 	}
 	
 	public Artist parseArtist(String filePath) {
