@@ -29,7 +29,7 @@ public class Artist implements SqlEntity{
 			}
 			stmt.close();
 			// artists
-			stmt = conn.prepareStatement("insert into artists values(?,?,?,?,?,?)");
+			stmt = conn.prepareStatement("insert delayed into artists values(?,?,?,?,?,?)");
 			stmt.setLong(1, artist_id);
 			stmt.setString(2, str_id);
 			stmt.setString(3, name);
@@ -40,7 +40,7 @@ public class Artist implements SqlEntity{
 			stmt.close();
 			// artist_tag
 			for(long tag_id : tags) {
-				stmt = conn.prepareStatement("replace into artist_tag values(?,?)");
+				stmt = conn.prepareStatement("replace delayed into artist_tag values(?,?)");
 				stmt.setLong(1, artist_id);
 				stmt.setLong(2, tag_id);
 				stmt.executeUpdate();
@@ -48,7 +48,7 @@ public class Artist implements SqlEntity{
 			}
 			// artist_genre
 			for(long genre_id : genres) {
-				stmt = conn.prepareStatement("replace into artist_genre values(?,?)");
+				stmt = conn.prepareStatement("replace delayed into artist_genre values(?,?)");
 				stmt.setLong(1, artist_id);
 				stmt.setLong(2, genre_id);
 				stmt.executeUpdate();
