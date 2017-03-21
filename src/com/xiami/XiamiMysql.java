@@ -135,7 +135,7 @@ public class XiamiMysql {
 	}
 	
 	public static void main(String[] args) {
-		int maxThreads = 20;
+		int maxThreads = 80;
 		XiamiMysql xiamiMysql = new XiamiMysql("root", "root");
 		xiamiMysql.excuteSQL("config/create.sql");
 		System.out.println("Start collecting fileName..");

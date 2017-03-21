@@ -20,16 +20,8 @@ public class Artist implements SqlEntity{
 	public boolean save2DB(Connection conn) {
 		try {
 			PreparedStatement stmt;
-			stmt = conn.prepareStatement("select artist_id from artists where artist_id = ?");
-			stmt.setLong(1, artist_id);
-			ResultSet rs = stmt.executeQuery();
-			if (rs.next()) {
-				stmt.close();
-				return true;
-			}
-			stmt.close();
 			// artists
-			stmt = conn.prepareStatement("insert delayed into artists values(?,?,?,?,?,?)");
+			stmt = conn.prepareStatement("replace delayed into artists values(?,?,?,?,?,?)");
 			stmt.setLong(1, artist_id);
 			stmt.setString(2, str_id);
 			stmt.setString(3, name);
