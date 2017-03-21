@@ -28,6 +28,7 @@ public class XiamiMysql {
 	
 	public boolean excuteSQL(String sqlPath) {
 		Statement stmt = null;
+		System.out.println("Excuting SQL...");
 		try {
 			stmt = conn.createStatement();
 			InputStream sqlStream = new FileInputStream(sqlPath);
@@ -38,6 +39,7 @@ public class XiamiMysql {
 					stmt.executeUpdate(sqlString);
 			}
 			stmt.close();
+			System.out.println("Excute SQL completed!");
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -133,7 +135,7 @@ public class XiamiMysql {
 	}
 	
 	public static void main(String[] args) {
-		int maxThreads = 40;
+		int maxThreads = 20;
 		XiamiMysql xiamiMysql = new XiamiMysql("root", "root");
 		xiamiMysql.excuteSQL("config/create.sql");
 		System.out.println("Start collecting fileName..");
