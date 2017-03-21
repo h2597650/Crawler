@@ -123,7 +123,7 @@ public class XiamiMysql {
 							continue;
 						similar_id = str2idMap.get(href);
 					}
-					stmt = conn.prepareStatement("replace into artist_simlar values (?,?)");
+					stmt = conn.prepareStatement("replace into artist_similar values (?,?)");
 					stmt.setLong(1, artist.artist_id);
 					stmt.setLong(2, similar_id);
 					stmt.executeUpdate();
