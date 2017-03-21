@@ -38,7 +38,6 @@ public class XiamiMysql {
 					stmt.executeUpdate(sqlString);
 			}
 			stmt.close();
-			System.out.println("Excute SQLs");
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
