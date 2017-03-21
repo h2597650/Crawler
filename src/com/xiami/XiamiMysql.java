@@ -6,6 +6,7 @@ import java.io.InputStream;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.concurrent.CountDownLatch;
 
 import org.apache.commons.io.IOUtils;
@@ -19,6 +20,7 @@ public class XiamiMysql {
 	private String baseFolder, sqlPath;
 	//private PageParser parser;
 	private ArrayList<Artist> artistList = new  ArrayList<Artist>();
+	private LinkedList<String> fileList = new LinkedList<String>();
 	
 	public XiamiMysql(String user, String password, String sqlPath) {
 		connectJDBC(user, password);
@@ -71,15 +73,7 @@ public class XiamiMysql {
 		boolean flag = true;
 		for(File file : files) {
 			if(file.getName().contains(".artist")) {
-				PageParser parser = new PageParser(conn, artistList, file.getPath());
-				while(PageParser.count.get()>40)
-					try {
-						Thread.sleep(500);
-					} catch (InterruptedException e) {
-						e.printStackTrace();
-					}
-				Thread parserThread = new Thread(parser);
-				parserThread.start();
+				fileList.add(file.getPath());
 				flag = false;
 				break;
 			}
@@ -139,15 +133,26 @@ public class XiamiMysql {
 	}
 	
 	public static void main(String[] args) {
+		int maxThreads = 20;
 		XiamiMysql xiamiMysql = new XiamiMysql("root", "root", "config/create.sql");
 		xiamiMysql.createDataBase();
+		System.out.println("Start collecting fileName..");
 		xiamiMysql.traverseFolder("xiami");
-		while(PageParser.count.get()>0)
-			try {
-				Thread.sleep(1000);
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
+		// multi threads
+		PageParser parser = new PageParser(xiamiMysql.conn, xiamiMysql.artistList, xiamiMysql.fileList);
+		ArrayList<Thread> threads = new ArrayList<Thread>();
+		for (int i = 0; i < maxThreads; i++) {
+			threads.add(new Thread(parser,"Thread "+i));
+		}
+		System.out.println("Start parsing...");
+		try {
+			for (int i = 0; i < maxThreads; i++) 
+				threads.get(i).start();
+			for (int i = 0; i < maxThreads; i++) 
+				threads.get(i).join();
+		} catch ( Exception e) {
+			e.printStackTrace();
+		}
 		xiamiMysql.saveSimilarArtist();
 	}
 

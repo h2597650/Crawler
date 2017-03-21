@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.sql.*;
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.commons.io.IOUtils;
@@ -17,23 +18,31 @@ import org.jsoup.nodes.Element;
 public class PageParser implements Runnable {
 	private Connection conn = null;
 	private ArrayList<Artist> artistList;
-	private String filePath;
-	public static AtomicInteger count = new AtomicInteger(0);
+	private LinkedList<String> fileList;
 	
-	public PageParser(Connection conn, ArrayList<Artist> artistList, String filePath) {
+	public PageParser(Connection conn, ArrayList<Artist> artistList, LinkedList<String> fileList) {
 		this.conn = conn;
 		this.artistList = artistList;
-		this.filePath = filePath;
+		this.fileList = fileList;
 	}
 	
 	public void run() {
-		count.incrementAndGet();
-		Artist artist = parseArtist(filePath);
-		synchronized (this.artistList) {
-			artistList.add(artist);
-			System.out.println("Parsed artist : " + artist.artist_id + ", " +artist.name);
+		while(true) {
+			String filePath;
+			synchronized (this.fileList) {
+				if(fileList.isEmpty())
+					break;
+				if(fileList.size()%100==0)
+					System.out.println("To Parse cnt : " + fileList.size() + "-------------------------");
+				filePath = fileList.getFirst();
+				fileList.removeFirst();
+			}
+			Artist artist = parseArtist(filePath);
+			synchronized (this.artistList) {
+				artistList.add(artist);
+				System.out.println(Thread.currentThread().getName() + " parsed artist : " + artist.artist_id + ", " +artist.name);
+			}
 		}
-		count.decrementAndGet();
 	}
 	
 	public Artist parseArtist(String filePath) {
