@@ -17,17 +17,16 @@ import com.xiami.entity.PageParser;
 public class XiamiMysql {
 
 	private Connection conn = null;
-	private String baseFolder, sqlPath;
+	private String baseFolder;
 	//private PageParser parser;
 	private ArrayList<Artist> artistList = new  ArrayList<Artist>();
 	private LinkedList<String> fileList = new LinkedList<String>();
 	
-	public XiamiMysql(String user, String password, String sqlPath) {
+	public XiamiMysql(String user, String password) {
 		connectJDBC(user, password);
-		this.sqlPath = sqlPath;
 	}
 	
-	public boolean createDataBase() {
+	public boolean excuteSQL(String sqlPath) {
 		Statement stmt = null;
 		try {
 			stmt = conn.createStatement();
