@@ -37,6 +37,8 @@ public class XiamiMysql {
 				if (sqlString.length()>0)
 					stmt.executeUpdate(sqlString);
 			}
+			stmt.close();
+			System.out.println("Excute SQLs");
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -133,8 +135,8 @@ public class XiamiMysql {
 	
 	public static void main(String[] args) {
 		int maxThreads =20;
-		XiamiMysql xiamiMysql = new XiamiMysql("root", "root", "config/create.sql");
-		xiamiMysql.createDataBase();
+		XiamiMysql xiamiMysql = new XiamiMysql("root", "root");
+		xiamiMysql.excuteSQL("config/create.sql");
 		System.out.println("Start collecting fileName..");
 		xiamiMysql.traverseFolder("xiami");
 		// multi threads
@@ -153,6 +155,7 @@ public class XiamiMysql {
 			e.printStackTrace();
 		}
 		xiamiMysql.saveSimilarArtist();
+		xiamiMysql.excuteSQL("config/alter_index.sql");
 	}
 
 }
