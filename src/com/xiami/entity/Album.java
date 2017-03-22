@@ -4,6 +4,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import com.mysql.jdbc.exceptions.jdbc4.MySQLIntegrityConstraintViolationException;
 
 public class Album implements SqlEntity{
 	public long album_id, artist_id;
@@ -59,6 +60,8 @@ public class Album implements SqlEntity{
 				song.save2DB(conn);
 			}
 			return true;
+		} catch (MySQLIntegrityConstraintViolationException e) {
+            return false;
 		} catch (SQLException e) {
 			System.err.println(album_id + "," + str_id);
 			e.printStackTrace();
