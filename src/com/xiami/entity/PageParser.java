@@ -7,6 +7,7 @@ import java.io.InputStream;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.LinkedList;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.commons.io.IOUtils;
@@ -18,17 +19,37 @@ import org.jsoup.nodes.Element;
 import com.mysql.jdbc.exceptions.jdbc4.MySQLIntegrityConstraintViolationException;
 
 public class PageParser implements Runnable {
-	private Connection conn = null;
 	private ArrayList<Artist> artistList;
 	private LinkedList<String> fileList;
+	private ConcurrentHashMap<Long,Boolean> genreMap, tagMap; 
+	//private Collections.newSetFromMap(new ConcurrentHashMap<Object,Boolean>())
 	
-	public PageParser(Connection conn, ArrayList<Artist> artistList, LinkedList<String> fileList) {
-		this.conn = conn;
+	public PageParser(ArrayList<Artist> artistList, LinkedList<String> fileList) {
 		this.artistList = artistList;
 		this.fileList = fileList;
+		genreMap = new ConcurrentHashMap<Long,Boolean>();
+		tagMap = new ConcurrentHashMap<Long,Boolean>();
+	}
+	
+	public Connection connectJDBC(String user, String password){
+		String DBDRIVER = "com.mysql.jdbc.Driver";    
+	    try {
+			Class.forName(DBDRIVER);
+		} catch (ClassNotFoundException e) {
+			e.printStackTrace();
+		}
+	    Connection conn = null;
+	    String url="jdbc:mysql://localhost:3306/xiami";   
+        try {
+            conn = DriverManager.getConnection(url, user, password);     
+        } catch (SQLException e){
+            e.printStackTrace();
+        } 
+        return conn;
 	}
 	
 	public void run() {
+		Connection conn = connectJDBC("root", "root");
 		while(true) {
 			String filePath;
 			synchronized (this.fileList) {
@@ -39,7 +60,7 @@ public class PageParser implements Runnable {
 				filePath = fileList.getFirst();
 				fileList.removeFirst();
 			}
-			Artist artist = parseArtist(filePath);
+			Artist artist = parseArtist(filePath, conn);
 			synchronized (this.artistList) {
 				artistList.add(artist);
 				System.out.println(Thread.currentThread().getName() + " parsed artist : " + artist.artist_id + ", " +artist.name);
@@ -48,7 +69,7 @@ public class PageParser implements Runnable {
         System.out.println(Thread.currentThread().getName() + " ended!");
 	}
 	
-	public Artist parseArtist(String filePath) {
+	public Artist parseArtist(String filePath, Connection conn) {
 		Document artistDoc = Jsoup.parse(fileContent(filePath));
 		Artist artist = new Artist();
 		// similar artist
@@ -80,7 +101,7 @@ public class PageParser implements Runnable {
 			String tagContent = tagEle.text();
 			if (tagContent.length()>20)
 				continue;
-			insertTag(tagID, tagContent);
+			insertTag(tagID, tagContent, conn);
 			artist.tags.add(tagID);
 		}
 		// id
@@ -93,7 +114,7 @@ public class PageParser implements Runnable {
 			String genreHref = genreEle.attr("href");
 			long genreID = Long.parseLong(extractID(genreHref));
 			String genreContent = genreEle.text();
-			insertGenre(genreID, genreContent);
+			insertGenre(genreID, genreContent, conn);
 			artist.genres.add(genreID);
 		}
 		// cnts
@@ -111,10 +132,10 @@ public class PageParser implements Runnable {
 			if (albumFolder.isDirectory()) {
 				String albumFileName = albumFolder.getPath() + "/" + albumFolder.getName() + ".album";
 				try {
-					Album album = parseAlbum(albumFileName, artist);
+					Album album = parseAlbum(albumFileName, artist, conn);
 					artist.albums.add(album);
 				} catch (Exception e) {
-					System.err.println(albumFolder.getPath());
+					System.err.println(albumFileName);
 					e.printStackTrace();
 				}
 			}
@@ -126,7 +147,7 @@ public class PageParser implements Runnable {
 		return artist;
 	}
 	
-	public Album parseAlbum(String filePath, Artist artist) {
+	public Album parseAlbum(String filePath, Artist artist, Connection conn) {
 		Document albumDoc = Jsoup.parse(fileContent(filePath));
 		Album album = new Album();
 		album.artist_id = artist.artist_id;
@@ -147,7 +168,7 @@ public class PageParser implements Runnable {
 			String tagContent = tagEle.text();
 			if (tagContent.length()>20)
 				continue;
-			insertTag(tagID, tagContent);
+			insertTag(tagID, tagContent, conn);
 			album.tags.add(tagID);
 		}
 		// genres
@@ -157,7 +178,7 @@ public class PageParser implements Runnable {
 			if(href.contains("/detail/sid/")) {
 				long genreID = Long.parseLong(extractID(href));
 				album.genres.add(genreID);
-				insertGenre(genreID, genreEle.text());
+				insertGenre(genreID, genreEle.text(), conn);
 			}
 		}
 		// artist str_id
@@ -186,7 +207,7 @@ public class PageParser implements Runnable {
 		for(File songFile : songFiles) {
 			if (songFile.getName().contains(".song")) {
 				try {
-					Song song = parseSong(songFile.getPath(), artist, album);
+					Song song = parseSong(songFile.getPath(), artist, album, conn);
 					album.songs.add(song);
 				} catch (Exception e) {
 					System.err.println(songFile.getPath());
@@ -197,7 +218,7 @@ public class PageParser implements Runnable {
 		return album;
 	}
 	
-	public Song parseSong(String filePath, Artist artist, Album album) {
+	public Song parseSong(String filePath, Artist artist, Album album, Connection conn) {
 		Document songDoc = Jsoup.parse(fileContent(filePath));
 		Song song = new Song();
 		song.artist_id = artist.artist_id;
@@ -220,7 +241,7 @@ public class PageParser implements Runnable {
 			String tagContent = tagEle.text();
 			if (tagContent.length()>20)
 				continue;
-			insertTag(tagID, tagContent);
+			insertTag(tagID, tagContent, conn);
 			song.tags.add(tagID);
 		}
 		// cnts
@@ -248,13 +269,16 @@ public class PageParser implements Runnable {
 	}
 	
 	
-	private boolean insertGenre(long genre_id, String genre) {
+	private boolean insertGenre(long genre_id, String genre, Connection conn) {
+		if (genreMap.containsKey(genre_id))
+			return false;
 		try {
 			PreparedStatement stmt = conn.prepareStatement("insert delayed into genres values(?,?)");
 			stmt.setLong(1, genre_id);
 			stmt.setString(2, genre);
 			stmt.executeUpdate();
 			stmt.close();
+			genreMap.put(genre_id, true);
 			return true;
 		} catch (MySQLIntegrityConstraintViolationException e) {
 			//e.printStackTrace();
@@ -265,13 +289,16 @@ public class PageParser implements Runnable {
 		}
 	}
 	
-	private boolean insertTag(long tag_id, String tag) {
+	private boolean insertTag(long tag_id, String tag, Connection conn) {
+		if (tagMap.containsKey(tag_id))
+			return false;
 		try {
 			PreparedStatement stmt = conn.prepareStatement("insert delayed into tags values(?,?)");
 			stmt.setLong(1, tag_id);
 			stmt.setString(2, tag);
 			stmt.executeUpdate();
 			stmt.close();
+			tagMap.put(tag_id, true);
 			return true;
 		} catch (MySQLIntegrityConstraintViolationException e) {
 			//e.printStackTrace();

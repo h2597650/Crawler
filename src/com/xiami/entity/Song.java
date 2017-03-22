@@ -16,8 +16,14 @@ public class Song implements SqlEntity{
 	public boolean save2DB(Connection conn) {
 		try {
 			PreparedStatement stmt;
+			// song_artist
+			stmt = conn.prepareStatement("insert delayed into song_artist values(?,?)");
+			stmt.setLong(1, song_id);
+			stmt.setLong(2, artist_id);
+			stmt.executeUpdate();
+			stmt.close();
 			// songs
-			stmt = conn.prepareStatement("insert delayed into songs values(?,?,?,?,?,?,?)");
+			stmt = conn.prepareStatement("replace delayed into songs values(?,?,?,?,?,?,?)");
 			stmt.setLong(1, song_id);
 			stmt.setString(2, str_id);
 			stmt.setString(3, name);
@@ -26,12 +32,6 @@ public class Song implements SqlEntity{
 			stmt.setLong(6, comments_cnt);
 			stmt.setLong(7, album_id);
 			//stmt.setLong(8, artist_id);
-			stmt.executeUpdate();
-			stmt.close();
-			// song_artist
-			stmt = conn.prepareStatement("insert delayed into song_artist values(?,?)");
-			stmt.setLong(1, song_id);
-			stmt.setLong(2, artist_id);
 			stmt.executeUpdate();
 			stmt.close();
 			// song_tag

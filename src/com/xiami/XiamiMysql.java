@@ -22,8 +22,7 @@ public class XiamiMysql {
 	private ArrayList<Artist> artistList = new  ArrayList<Artist>();
 	private LinkedList<String> fileList = new LinkedList<String>();
 	
-	public XiamiMysql(String user, String password) {
-		connectJDBC(user, password);
+	public XiamiMysql() {
 	}
 	
 	public boolean excuteSQL(String sqlPath) {
@@ -46,25 +45,7 @@ public class XiamiMysql {
 		return true;
 	}
 	
-	private boolean connectJDBC(String user, String password){
-		String DBDRIVER = "com.mysql.jdbc.Driver";    
-	    try {
-			Class.forName(DBDRIVER);
-		} catch (ClassNotFoundException e) {
-			e.printStackTrace();
-		}
-	    
-	    String url="jdbc:mysql://localhost:3306/xiami";   
-        try {
-            conn = DriverManager.getConnection(url, user, password);
-            Statement stmt = conn.createStatement();
-            stmt.close();
-            return true;
-        } catch (SQLException e){
-            e.printStackTrace();
-            return false;
-        } 
-	}
+	
 
 	
 	public void traverseFolder(String folderName) {
@@ -135,13 +116,15 @@ public class XiamiMysql {
 	}
 	
 	public static void main(String[] args) {
-		int maxThreads = 80;
-		XiamiMysql xiamiMysql = new XiamiMysql("root", "root");
-		xiamiMysql.excuteSQL("config/create.sql");
+		int maxThreads = 20;
+		XiamiMysql xiamiMysql = new XiamiMysql();
 		System.out.println("Start collecting fileName..");
 		xiamiMysql.traverseFolder("xiami");
 		// multi threads
-		PageParser parser = new PageParser(xiamiMysql.conn, xiamiMysql.artistList, xiamiMysql.fileList);
+		PageParser parser = new PageParser(xiamiMysql.artistList, xiamiMysql.fileList);
+		
+		xiamiMysql.conn = parser.connectJDBC("root", "root");
+		xiamiMysql.excuteSQL("config/create.sql");
 		ArrayList<Thread> threads = new ArrayList<Thread>();
 		for (int i = 0; i < maxThreads; i++) {
 			threads.add(new Thread(parser,"Thread "+i));
