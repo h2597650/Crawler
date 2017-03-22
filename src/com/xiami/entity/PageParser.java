@@ -110,8 +110,13 @@ public class PageParser implements Runnable {
 		for(File albumFolder : albumFiles) {
 			if (albumFolder.isDirectory()) {
 				String albumFileName = albumFolder.getPath() + "/" + albumFolder.getName() + ".album";
-				Album album = parseAlbum(albumFileName, artist);
-				artist.albums.add(album);
+				try {
+					Album album = parseAlbum(albumFileName, artist);
+					artist.albums.add(album);
+				} catch (Exception e) {
+					System.err.println(albumFolder.getPath());
+					e.printStackTrace();
+				}
 			}
 		}
 		//synchronized (this.conn) {
@@ -180,8 +185,13 @@ public class PageParser implements Runnable {
 		File[] songFiles = albumFolder.listFiles();
 		for(File songFile : songFiles) {
 			if (songFile.getName().contains(".song")) {
-				Song song = parseSong(songFile.getPath(), artist, album);
-				album.songs.add(song);
+				try {
+					Song song = parseSong(songFile.getPath(), artist, album);
+					album.songs.add(song);
+				} catch (Exception e) {
+					System.err.println(songFile.getPath());
+					e.printStackTrace();
+				}
 			}
 		}
 		return album;
