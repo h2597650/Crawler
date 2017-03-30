@@ -327,7 +327,7 @@ public class XiamiSongCrawler implements Runnable {
 		
 		
 		int maxThreads = 40;
-		XiamiSongCrawler crawler = new XiamiSongCrawler("http://www.xiami.com/artist/", "xiami/artist.list", 12450L, "xiami/");
+		XiamiSongCrawler crawler = new XiamiSongCrawler("http://www.xiami.com/artist/", "xiami/artist.list", 5250L, "xiami/");
 //		crawler.setProxy("config/proxy.txt");
 		crawler.setProvider("config/provider.txt");
 		ArrayList<Thread> threads = new ArrayList<Thread>();
