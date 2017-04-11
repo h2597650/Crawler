@@ -1,0 +1,157 @@
+2017-02-26  Version 3.2.0
+=========================
+- [#49] xiami now encrypts the object id in url, add logic to get the real id, also try to get the hq link directly from json
+
+2016-12-18  Version 3.1.3
+=========================
+- [#47] xiami song title handling
+- [#46] merge pull request, xiami album downloading, songname contains slash etc.
+
+2016-06-27  Version 3.1.2
+=========================
+- [#40] don't trace the redirected url, avoid double mp3 downloading
+
+2016-02-01  Version 3.1.1
+=========================
+- [#38] rewrite the proxy handling
+- [#39] bugfix
+
+2016-02-01  Version 3.1.0
+=========================
+- [#32] apply 163 new api
+
+2016-02-01  Version 3.0.4
+=========================
+- [#29] check the key (position) in json dict before using it. 163 changed json structure.
+
+2016-01-21  Version 3.0.3
+=========================
+- [bugfix] [#26] change the 163's mp3 dl link
+
+2015-12-22  Version 3.0.2
+=========================
+- [enhancement] add download rate in output 
+
+2015-12-19  Version 3.0.1
+=========================
+- [feature][#25] set track no in 163 mp3
+- [bugfix] update history fix
+
+2015-12-02  Version 3.0.0
+=========================
+- [feature] [#20] incremental downloading support (-i option)
+- [feature] downloading history (export, clear)
+- [feature] download summary after downloading (view/save as file)
+- [enhancement] better help info output
+
+2015-11-25  Version 2.8.1
+=========================
+- [#24] fix the refactory problem (old method name)
+
+2015-11-22 Version 2.8.0
+=========================
+- [feature] [#21] add timeout (30s) for downloading, if timeout occured, re-download, max 5 retries
+- [feature] [#21] bring the failed task names to console output. more log msgs (debug level)
+- [feature] [#21] add download method implemented by urllib2, instead of requests lib
+- [enhancement] [#22] better way for passing arguments
+
+2015-11-17  Version 2.7.1
+=========================
+- [bugfix] uncomment the useful line..... get 163 lyric..
+
+2015-11-12  Version 2.7.0
+=========================
+- [#18] rename the proxy config item name. apply it also on the netease
+
+2015-11-11  Version 2.6.1
+=========================
+- [bugfix] fix the mistake, lyric download was default
+- [bugfix] check the lyric json, if not available, print err msg stop downloading
+- [workaround] 163 mp3 downloading for oversea IP
+
+2015-10-28  Version 2.6.0
+=========================
+- [feature] [issue #17] add -l option, supports lyrics downloading
+- [bugfix] [issue #9] name file(mp3 + lyric) in pattern: artistName_songName.mp3/lrc
+- [bugfix] beautifulsoup4 warning when with -p (proxypool)
+
+2015-10-22  Version 2.5.1
+=========================
+- [feature] [issue #16] remove the hardcoded max 30 for artist TopN downloading
+- [bugfix] [issue #16] make beautifulsoup don't print warning
+- [bugfix] [issue #16] change xiami artist topN parsing for the modification of xiami website's link pattern
+- [issue #16] lazy init xiami object in commander.py
+2015-08-06 Version 2.5.0
+=========================
+- [feature] add english translation (output, readme...)
+2015-07-22 Version 2.4.1
+=========================
+- [bugfix] some 163 songs have no 128kbps link, fall back to 96kbps in this case
+
+2014-12-08 Version 2.4.0
+=========================
+- [feature] (Experimental) add -p option, auto fetching proxies (proxy pool) to avoid to be banned by servers. 
+
+2014-12-01 Version 2.3.0
+=========================
+- [bugfix] apply xiami new "API" to fix the xiami mp3 downloading (user favorite, album's desc)
+
+2014-11-29 Version 2.2.0
+=========================
+- [bugfix] apply xiami new "API" to fix the xiami mp3 downloading (song, album, collection, artist_top)
+
+2014-07-31 Version 2.1.1
+=========================
+- [feature] Pressing Ctrl-C will terminate zhuaxia immediately
+
+2014-07-31 Version 2.1.0
+=========================
+- [feature] add http proxy option for xiami api request. 
+
+2014-07-27  Version 2.0.1
+=========================
+- [bugfix] [163]check if there is HQ json data available before fetching the dfsid
+
+2014-06-23  Version 2.0.0
+=========================
+- [feature] supports netease (music.163.com) mp3 downloading now
+
+2014-06-23  Version 1.3.1
+=========================
+- [bugfix] -H option has problem to download xiami mp3 if user login successful but not VIP
+- [bugfix] album html encoding problem
+- [bugfix] album: song.group_dir applys albums' artist_name and name, instead of songs.
+- [bugfix] after parsing url/input file, if no dl tasks, should exit zx. don't hand over to downloader
+
+2014-06-07  Version 1.3.0
+=========================
+- [feature] add artist TopN songs download
+
+2014-04-27  Version 1.2.0
+=========================
+- [bugfix] diplay last x finished jobs in a wrong order
+- add total progress bar
+- adjust output alignment (header text left align)
+
+2014-04-25  Version 1.1.2
+=========================
+- [bugfix] if the song name had slash "/", downloader cannot save file
+
+2014-04-15  Version 1.1.1
+=========================
+- [bugfix] user name decoded with utf-8 for output
+- [bugfix] low/high Quality checking logic (setting flag)
+
+2014-04-13  Version 1.1.0
+=========================
+- add -H option for HQ (320kbps) downloading
+- improve the args parsing
+
+2014-04-08  Version 1.0.0
+=========================
+save album description to file
+
+
+2014-04-04  Version 1.0.0
+=========================
+initial release
