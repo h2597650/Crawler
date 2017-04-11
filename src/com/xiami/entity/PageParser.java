@@ -88,6 +88,8 @@ public class PageParser implements Runnable {
 			artist.name = artistDoc.select("div#glory-title div.clearfix>h1").first().ownText();
 			tagEles = artistDoc.select("div#artist_tag>div.content").select(".clearfix>a");
 		}
+		if (artist.name.length()>200)
+			artist.name = artist.name.substring(0,200);
 		for(Element hrefEle : hrefEles) {
 			String hrefID = extractID(hrefEle.attr("href"));
 			artist.similars.add(hrefID);
@@ -119,7 +121,12 @@ public class PageParser implements Runnable {
 		}
 		// cnts
 		Elements cntEles = artistDoc.select("div.music_counts>ul.clearfix>li");
-		artist.play_cnt = Long.parseLong(cntEles.get(0).select("em#play_count_num").text());
+		artist.play_cnt = 0;
+		try {
+			artist.play_cnt = Long.parseLong(cntEles.get(0).select("em#play_count_num").text());
+		} catch (Exception e) {
+			System.out.println("No play_cnt error : " + filePath);
+		}
 		artist.fans_cnt = Long.parseLong(cntEles.get(1).select("a").first().ownText());
 		artist.comments_cnt = Long.parseLong(cntEles.get(2).select("a[href=#wall]").first().ownText());
 		
@@ -158,6 +165,8 @@ public class PageParser implements Runnable {
 		album.str_id = new File(filePath).getParentFile().getName();
 		// name
 		album.name = albumDoc.select("div#title > h1").first().ownText();
+		if (album.name.length()>200)
+			album.name = album.name.substring(0,200);
 		// tags
 		Elements tagEles = albumDoc.select("div#album_tags_block>div.content").select(".clearfix>a");
 		for(Element tagEle : tagEles) {
@@ -231,6 +240,8 @@ public class PageParser implements Runnable {
         song.song_id = Long.parseLong(extractID(idEle.attr("src")));
 		//name
 		song.name = songDoc.select("div#title > h1").first().ownText();
+		if (song.name.length()>200)
+			song.name = song.name.substring(0,200);
 		// tags
 		Elements tagEles = songDoc.select("div#song_tags_block>div.content").select(".clearfix>a");
 		for(Element tagEle : tagEles) {
