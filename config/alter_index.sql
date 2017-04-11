@@ -1,4 +1,4 @@
-alter table artists add unique(str_id);
+alter table artists add index(str_id);
 
 alter table albums add unique(str_id);
 alter table albums add index(artist_id);
