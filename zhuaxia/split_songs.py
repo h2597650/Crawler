@@ -1,4 +1,6 @@
-import math
+import math, os
+if not os.path.exists('split'):
+    os.mkdir('split')
 vec = []
 with open('songs.txt', 'r') as f:
     for line in f:
