@@ -101,9 +101,11 @@ class Song(object):
             self.lyric_filename = self.lyric_filename.replace('/','_')
             
             if self.group_dir:
-                self.abs_path = path.join(config.DOWNLOAD_DIR, self.group_dir, self.filename)
+                self.folder_path = path.join(config.DOWNLOAD_DIR, self.group_dir, self.filename[0:2], self.filename[2:4])
+                self.abs_path = path.join(config.DOWNLOAD_DIR, self.group_dir, self.filename[0:2], self.filename[2:4], self.filename)
                 self.lyric_abs_path = path.join(config.DOWNLOAD_DIR, self.group_dir, self.lyric_filename)
             else:
                 # abs path for mp3 and lyric
-                self.abs_path = path.join(config.DOWNLOAD_DIR,self.filename)
+                self.folder_path = path.join(config.DOWNLOAD_DIR, self.filename[0:2], self.filename[2:4])
+                self.abs_path = path.join(config.DOWNLOAD_DIR, self.filename[0:2], self.filename[2:4], self.filename)
                 self.lyric_abs_path = path.join(config.DOWNLOAD_DIR,self.lyric_filename)

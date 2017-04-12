@@ -280,6 +280,11 @@ def download_single_song(song):
         done+=1
         return
     mp3_file = song.abs_path
+    if not os.path.exists(song.folder_path):
+        try:
+            os.makedirs(song.folder_path)
+        except:
+            pass
 
     dl_result = -1 # download return code
     LOG.debug("[DL_Song] downloading: %s " % song.dl_link)
@@ -398,7 +403,15 @@ def finish_summary(skipped_hist):
         for song in failed_list:
             text.append('%s\t%s'%(song.song_name, song.abs_path))
 
-    while True:
+    #my save log
+    if not os.path.exists('summary'):
+        os.makedirs('summary')
+    summary = path.join('summary','summary_'+str(datetime.datetime.today())+".txt")
+    with codecs.open(summary, 'w', 'utf-8') as f:
+        f.write("\n".join(text))
+    print log.hl(msg.summary_saved % summary ,'cyan')
+    
+    while False:
         sys.stdout.write(msg.summary_prompt)
         choice = raw_input().lower()
         if choice == 'q' or choice == '':
