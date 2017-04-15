@@ -10,7 +10,7 @@ from __future__ import print_function
 
 import os
 import numpy as np
-
+import math
 import scipy.signal
 
 # For reading/writing hashes to file
@@ -51,6 +51,13 @@ def locmax(vec, indices=False):
         return np.nonzero(maxmask)[0]
     else:
         return maxmask
+
+def wgn(x, snr):
+    x = np.array(x)
+    snr = 10**(snr/10.0)
+    xpower = np.sum(x**2)/len(x)
+    npower = xpower / snr
+    return x + np.random.randn(len(x)) * np.sqrt(npower)
 
 # Constants for Analyzer
 # DENSITY controls the density of landmarks found (approx DENSITY per sec)
@@ -126,7 +133,7 @@ class Analyzer(object):
         # Maximum number of local maxima to keep per frame
         self.maxpksperframe = 5
         # Limit the num of pairs we'll make from each peak (Fanout)
-        self.maxpairsperpeak = 3
+        self.maxpairsperpeak = 30
         # Values controlling peaks2landmarks
         # +/- 31 bins in freq (LIMITED TO -32..31 IN LANDMARK2HASH)
         self.targetdf = 31
@@ -246,6 +253,9 @@ class Analyzer(object):
         return peaks
 
     def find_peaks(self, d, sr):
+        peaks,sgram,sgramo = self.find_peaks_sgram(d, sr)
+        return peaks
+    def find_peaks_sgram(self, d, sr):
         """ Find the local peaks in the spectrogram as basis for fingerprints.
             Returns a list of (time_frame, freq_bin) pairs.
 
@@ -271,12 +281,11 @@ class Analyzer(object):
                 **(1.0/OVERSAMP)
         # Take spectrogram
         mywin = np.hanning(self.n_fft+2)[1:-1]
-        sgram = np.abs(librosa.stft(d, n_fft=self.n_fft,
+        sgramo = np.abs(librosa.stft(d, n_fft=self.n_fft,
                                     hop_length=self.n_hop,
                                     window=mywin))
-        sgrammax = np.max(sgram)
-        if sgrammax > 0.0:
-            sgram = np.log(np.maximum(sgram, np.max(sgram)/1e6))
+        if np.max(sgramo) > 0.0:
+            sgram = np.log(np.maximum(sgramo, np.max(sgramo)/1e6))
             sgram = sgram - np.mean(sgram)
         else:
             # The sgram is identically zero, i.e., the input signal was identically
@@ -300,7 +309,7 @@ class Analyzer(object):
         for col in xrange(scols):
             for bin in np.nonzero(peaks[:, col])[0]:
                 pklist.append( (col, bin) )
-        return pklist
+        return pklist, sgram, sgramo
 
     def peaks2landmarks(self, pklist):
         """ Take a list of local peaks in spectrogram
@@ -367,7 +376,11 @@ class Analyzer(object):
                 peaklists = []
                 for shift in range(shifts):
                     shiftsamps = int(float(shift)/self.shifts*self.n_hop)
-                    peaklists.append(self.find_peaks(d[shiftsamps:], sr))
+                    peaks = self.find_peaks(d[shiftsamps:], sr)
+                    for i in range(len(peaks)):
+                        (t1,f1) = peaks[i]
+                        peaks[i] = (t1+shiftsamps,f1)
+                    peaklists.append(peaks)
                 peaks = peaklists
 
         # instrumentation to track total amount of sound processed
@@ -410,6 +423,90 @@ class Analyzer(object):
 
         #print("wavfile2hashes: read", len(hashes), "hashes from", filename)
         return hashes
+    
+    def wavfile2samples(self, filename, label=True):
+        landmarks = self.peaks2landmarks(self.wavfile2peaks(filename))
+        d, sr = audio_read.audio_read(filename, sr=self.target_sr, channels=1)
+        peaks,sgram,sgramo = self.find_peaks_sgram(d, sr)
+        lms_map = {}
+        for lm in landmarks:
+            lms_map[lm] = 0.0
+
+        # probs
+        probs = np.zeros((len(landmarks),1))
+        if label:
+            test_cnt = 0.0
+            # move a slide
+            peaklist = self.wavfile2peaks(filename, 20)
+            peaklist = peaklist[3:17]
+            # test with wgn
+            for db in range(20,41):
+                test_d = wgn(d, db)
+                peaklist.append(self.find_peaks(test_d, sr))
+            for idx in range(len(peaklist)):
+                test_cnt += 1.0
+                lms_test = self.peaks2landmarks(peaklist[idx])
+                for (t1,f1,f2,dt) in lms_test:
+                    for t in range(t1-1,t1+2):
+                        key = (t,f1,f2,dt)
+                        if key in lms_map:
+                            lms_map[key] += 1.0
+                            break
+            for idx, key in enumerate(landmarks):
+                probs[idx] = lms_map[key] / test_cnt
+        
+        # features
+        feats_list = []
+        (Freq,Time) = np.shape(sgram)
+        for idx in range(len(landmarks)):
+            (Freq,Time) = (float(Freq),float(Time))
+            (t1,f1,f2,dt) = landmarks[idx]
+            t2 = t1 + dt
+            feats_1 = [t1, t2, f1, f2, t2-t1, f2-f1]
+            # ratio
+            feats_2 = [t1/Time, t2/Time, f1/Freq, f2/Freq, (t2-t1)/Time, (f2-f1)/Freq]
+            # distance
+            dist = [math.sqrt(feats_1[4]**2+feats_2[5]**2), math.sqrt(feats_2[4]**2+feats_2[5]**2)]
+            # energy
+            (Freq,Time) = (int(Freq),int(Time))
+            feats_e = [sgram[f1][t1], sgram[f2][t2]]
+            feats_e.extend([feats_e[0]+feats_e[1], feats_e[0]*feats_e[1]])
+            feats_e.extend([abs(feats_e[1]-feats_e[2]), abs(feats_e[1]-feats_e[2])/dist[0], abs(feats_e[1]-feats_e[2])/dist[1]])
+            feats_eo = [sgramo[f1][t1], sgramo[f2][t2]]
+            feats_eo.extend([feats_eo[0]+feats_eo[1], feats_eo[0]*feats_eo[1]])
+            feats_eo.extend([abs(feats_eo[1]-feats_eo[2]), abs(feats_eo[1]-feats_eo[2])/dist[0], abs(feats_eo[1]-feats_eo[2])/dist[1]])
+            # engery surrounding
+            feats_sur_1 = [sgram[min(f1+1,Freq-1)][min(t1+1,Time-1)], sgram[min(f1+1,Freq-1)][t1], sgram[min(f1+1,Freq-1)][max(t1-1,0)]]
+            feats_sur_1.extend([sgram[f1][min(t1+1,Time-1)],sgram[f1][max(t1-1,0)]])
+            feats_sur_1.extend([sgram[max(f1-1,0)][min(t1+1,Time-1)], sgram[max(f1-1,0)][t1], sgram[max(f1-1,0)][max(t1-1,0)]])
+            feats_sur_1 -= sgram[f1][t1]
+            feats_sur_2 = [sgram[min(f2+1,Freq-1)][min(t2+1,Time-1)], sgram[min(f2+1,Freq-1)][t2], sgram[min(f2+1,Freq-1)][max(t2-1,0)]]
+            feats_sur_2.extend([sgram[f2][min(t2+1,Time-1)],sgram[f2][max(t2-1,0)]])
+            feats_sur_2.extend([sgram[max(f2-1,0)][min(t2+1,Time-1)], sgram[max(f2-1,0)][t2], sgram[max(f2-1,0)][max(t2-1,0)]])
+            feats_sur_2 -= sgram[f2][t2]
+
+            feats_suro_1 = [sgramo[min(f1+1,Freq-1)][min(t1+1,Time-1)], sgramo[min(f1+1,Freq-1)][t1], sgramo[min(f1+1,Freq-1)][max(t1-1,0)]]
+            feats_suro_1.extend([sgramo[f1][min(t1+1,Time-1)],sgramo[f1][max(t1-1,0)]])
+            feats_suro_1.extend([sgramo[max(f1-1,0)][min(t1+1,Time-1)], sgramo[max(f1-1,0)][t1], sgramo[max(f1-1,0)][max(t1-1,0)]])
+            feats_suro_1 -= sgramo[f1][t1]
+            feats_suro_2 = [sgramo[min(f2+1,Freq-1)][min(t2+1,Time-1)], sgramo[min(f2+1,Freq-1)][t2], sgramo[min(f2+1,Freq-1)][max(t2-1,0)]]
+            feats_suro_2.extend([sgramo[f2][min(t2+1,Time-1)],sgramo[f2][max(t2-1,0)]])
+            feats_suro_2.extend([sgramo[max(f2-1,0)][min(t2+1,Time-1)], sgramo[max(f2-1,0)][t2], sgramo[max(f2-1,0)][max(t2-1,0)]])
+            feats_suro_2 -= sgramo[f2][t2]
+            # append to feats
+            feats = [Time,Freq]
+            feats.extend(feats_1)
+            feats.extend(feats_2)
+            feats.extend(dist)
+            feats.extend(feats_e)
+            feats.extend(feats_eo)
+            feats.extend(feats_sur_1)
+            feats.extend(feats_sur_2)
+            feats.extend(feats_suro_1)
+            feats.extend(feats_suro_2)
+            feats_list.append(feats)
+        return np.array(feats_list), probs
+
 
     ########### functions to link to actual hash table index database #######
 
