@@ -25,7 +25,6 @@ import audfprint_analyze
 # My hash_table implementation
 import hash_table
 # Access to match functions, used in command line interface
-import audfprint_match
 import xgboost as xgb
 import numpy as np
 
