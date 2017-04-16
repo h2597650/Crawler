@@ -2,14 +2,23 @@ package com.xiami;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
+import java.net.InetSocketAddress;
+import java.net.Proxy;
+import java.net.URL;
+import java.net.URLConnection;
 import java.sql.*;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.concurrent.CountDownLatch;
 
 import org.apache.commons.io.IOUtils;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
 
 import com.xiami.entity.Artist;
 import com.xiami.entity.PageParser;
@@ -114,8 +123,24 @@ public class XiamiMysql {
 			return false;
 		}
 	}
-	
-	public static void main(String[] args) {
+	class Test {
+		public void print() {
+			hasAlpha("aaaa");
+		}
+	}
+	public static void main(String[] args) throws Exception {
+		// TODO decode str to url
+		String str = "http://www.xiami.com/song/playlist/id/2100337262/type/1/cat/json";
+		String urlStr = java.net.URLDecoder.decode(str, "utf-8").replace('^', '0');
+		URL url = new URL(urlStr);
+		URLConnection conn = url.openConnection();
+        conn.setConnectTimeout(500);
+        InputStream inPage = conn.getInputStream();
+        try (FileOutputStream out = new FileOutputStream("haha.mp3")) {
+            IOUtils.copy(inPage, out);
+        }
+		System.exit(0);
+		
 		int maxThreads = 20;
 		XiamiMysql xiamiMysql = new XiamiMysql();
 		System.out.println("Start collecting fileName..");
