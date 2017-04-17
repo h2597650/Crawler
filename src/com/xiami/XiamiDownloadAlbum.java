@@ -9,6 +9,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
+import java.io.BufferedWriter;
+import java.io.OutputStreamWriter;
+import java.io.FileOutputStream;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.net.URL;
@@ -271,7 +274,7 @@ public class XiamiDownloadAlbum {
 	}
 	
 	public static void main(String[] args) throws Exception {
-		int maxThreads = 10;
+		int maxThreads = 40;
 		
 		XiamiDownloadAlbum downloader = new XiamiDownloadAlbum();
 		downloader.setProvider("config/provider.txt");
@@ -286,6 +289,18 @@ public class XiamiDownloadAlbum {
 			for (int i = 0; i < maxThreads; i++) threads.get(i).start();
 			for (int i = 0; i < maxThreads; i++) threads.get(i).join();
 			
+	    	try {
+		    	BufferedWriter bufw = new BufferedWriter(new OutputStreamWriter(
+			    		new FileOutputStream("config/songsUrl.txt"), "UTF-8"));
+			    for (Map.Entry<Long, String> entry : jsonThread.songsList.entrySet()) {
+				    bufw.write(entry.getKey() + "," + entry.getValue() + "\n");
+			    }
+                bufw.flush();
+			    bufw.close();
+		    } catch (Exception e) {
+			    e.printStackTrace();
+		    }
+
 			SongDownloader songThread = downloader.new SongDownloader(jsonThread.songsList);
 			threads = new ArrayList<Thread>();
 			for (int i = 0; i < maxThreads; i++) threads.add(new Thread(songThread,"SongThread "+i));
