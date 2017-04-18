@@ -96,7 +96,7 @@ public class XiamiDownloadAlbum {
 			        return inPage;
 				}
 			} catch (Exception e) {
-				delay += 1000;
+				delay += 2000;
 				if(delay>10000)
 					throw e;
 			    try {
@@ -194,7 +194,10 @@ public class XiamiDownloadAlbum {
 					ArrayList<String> songsUrl = new ArrayList<String>();
 					ArrayList<Long> songsID = new ArrayList<Long>();
 					for (int i = 0; i < songsObj.length(); ++i) {
-						songsUrl.add(decodeLocation(songsObj.getJSONObject(i).getString("location")));
+                        String strLocation = songsObj.getJSONObject(i).getString("location");
+                        if (strLocation==null || strLocation.length()==0)
+                            continue;
+						songsUrl.add(decodeLocation(strLocation));
 						songsID.add(songsObj.getJSONObject(i).getLong("songId"));
 					}
 					synchronized (this.songsList) {
