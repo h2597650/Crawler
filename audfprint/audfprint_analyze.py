@@ -59,16 +59,39 @@ def wgn(x, snr):
     npower = xpower / snr
     return x + np.random.randn(len(x)) * np.sqrt(npower)
 
+def squares(sgram, px, py, idx=2):
+    (Freq,Time) = np.shape(sgram)
+    slen = idx*2+1
+    ret = np.zeros((slen,slen))
+    for off_x in range(-idx,idx+1):
+        for off_y in range(-idx,idx+1):
+            x = min(max(0,px+off_x), Freq-1)
+            y = min(max(0,py+off_y), Time-1)
+            ret[off_x][off_y] = sgram[x][y]
+    ret = ret - sgram[px][py]
+    return ret
+
+def curvature(sq, pos):
+    pa = np.array([-1,sq[pos[0]][pos[1]]])
+    pb = np.array([0,0])
+    pc = np.array([1,sq[-pos[0]][-pos[1]]])
+    a = math.sqrt( np.power(pb-pc,2).sum() )
+    b = math.sqrt( np.power(pa-pc,2).sum() )
+    c = math.sqrt( np.power(pa-pb,2).sum() )
+    S2 = (a+b+c)*(-a+b+c)*(a-b+c)*(a+b-c)
+    return a*b*c/math.sqrt(S2)
+
+
 # Constants for Analyzer
 # DENSITY controls the density of landmarks found (approx DENSITY per sec)
-DENSITY = 20.0
+DENSITY = 200.0 #20.0
 # OVERSAMP > 1 tries to generate extra landmarks by decaying faster
 OVERSAMP = 1
 ## 512 pt FFT @ 11025 Hz, 50% hop
 #t_win = 0.0464
 #t_hop = 0.0232
 # Just specify n_fft
-N_FFT = 512
+N_FFT = 2048 #512
 N_HOP = 256
 # spectrogram enhancement
 HPF_POLE = 0.98
@@ -124,7 +147,7 @@ class Analyzer(object):
 
     def __init__(self, density=DENSITY):
         self.density = density
-        self.target_sr = 11025
+        self.target_sr = 8000
         self.n_fft = N_FFT
         self.n_hop = N_HOP
         self.shifts = 1
@@ -462,48 +485,54 @@ class Analyzer(object):
             (Freq,Time) = (float(Freq),float(Time))
             (t1,f1,f2,dt) = landmarks[idx]
             t2 = t1 + dt
+            # make sure f1 < f2
+            if f1 > f2 or (f1==f2 and t1 > t2):
+                f1,f2 = f2,f1
+                t1,t2 = t2,t1
             feats_1 = [t1, t2, f1, f2, t2-t1, f2-f1]
             # ratio
             feats_2 = [t1/Time, t2/Time, f1/Freq, f2/Freq, (t2-t1)/Time, (f2-f1)/Freq]
             # distance
             dist = [math.sqrt(feats_1[4]**2+feats_2[5]**2), math.sqrt(feats_2[4]**2+feats_2[5]**2)]
             # energy
-            (Freq,Time) = (int(Freq),int(Time))
             feats_e = [sgram[f1][t1], sgram[f2][t2]]
             feats_e.extend([feats_e[0]+feats_e[1], feats_e[0]*feats_e[1]])
-            feats_e.extend([abs(feats_e[1]-feats_e[2]), abs(feats_e[1]-feats_e[2])/dist[0], abs(feats_e[1]-feats_e[2])/dist[1]])
+            feats_e.extend([(feats_e[1]-feats_e[2]), (feats_e[1]-feats_e[2])/dist[0], (feats_e[1]-feats_e[2])/dist[1]])
             feats_eo = [sgramo[f1][t1], sgramo[f2][t2]]
             feats_eo.extend([feats_eo[0]+feats_eo[1], feats_eo[0]*feats_eo[1]])
-            feats_eo.extend([abs(feats_eo[1]-feats_eo[2]), abs(feats_eo[1]-feats_eo[2])/dist[0], abs(feats_eo[1]-feats_eo[2])/dist[1]])
+            feats_eo.extend([(feats_eo[1]-feats_eo[2]), (feats_eo[1]-feats_eo[2])/dist[0], (feats_eo[1]-feats_eo[2])/dist[1]])
             # engery surrounding
-            feats_sur_1 = [sgram[min(f1+1,Freq-1)][min(t1+1,Time-1)], sgram[min(f1+1,Freq-1)][t1], sgram[min(f1+1,Freq-1)][max(t1-1,0)]]
-            feats_sur_1.extend([sgram[f1][min(t1+1,Time-1)],sgram[f1][max(t1-1,0)]])
-            feats_sur_1.extend([sgram[max(f1-1,0)][min(t1+1,Time-1)], sgram[max(f1-1,0)][t1], sgram[max(f1-1,0)][max(t1-1,0)]])
-            feats_sur_1 -= sgram[f1][t1]
-            feats_sur_2 = [sgram[min(f2+1,Freq-1)][min(t2+1,Time-1)], sgram[min(f2+1,Freq-1)][t2], sgram[min(f2+1,Freq-1)][max(t2-1,0)]]
-            feats_sur_2.extend([sgram[f2][min(t2+1,Time-1)],sgram[f2][max(t2-1,0)]])
-            feats_sur_2.extend([sgram[max(f2-1,0)][min(t2+1,Time-1)], sgram[max(f2-1,0)][t2], sgram[max(f2-1,0)][max(t2-1,0)]])
-            feats_sur_2 -= sgram[f2][t2]
-
-            feats_suro_1 = [sgramo[min(f1+1,Freq-1)][min(t1+1,Time-1)], sgramo[min(f1+1,Freq-1)][t1], sgramo[min(f1+1,Freq-1)][max(t1-1,0)]]
-            feats_suro_1.extend([sgramo[f1][min(t1+1,Time-1)],sgramo[f1][max(t1-1,0)]])
-            feats_suro_1.extend([sgramo[max(f1-1,0)][min(t1+1,Time-1)], sgramo[max(f1-1,0)][t1], sgramo[max(f1-1,0)][max(t1-1,0)]])
-            feats_suro_1 -= sgramo[f1][t1]
-            feats_suro_2 = [sgramo[min(f2+1,Freq-1)][min(t2+1,Time-1)], sgramo[min(f2+1,Freq-1)][t2], sgramo[min(f2+1,Freq-1)][max(t2-1,0)]]
-            feats_suro_2.extend([sgramo[f2][min(t2+1,Time-1)],sgramo[f2][max(t2-1,0)]])
-            feats_suro_2.extend([sgramo[max(f2-1,0)][min(t2+1,Time-1)], sgramo[max(f2-1,0)][t2], sgramo[max(f2-1,0)][max(t2-1,0)]])
-            feats_suro_2 -= sgramo[f2][t2]
+            locs = [(-1,1),(0,1),(1,1),(-1,0),(1,0),(-1,-1),(0,-1),(1,-1)]
+            poss = [(-1,1),(0,1),(1,1),(1,0)]
+            feats_surs = []
+            sgrams = [sgram,sgramo]
+            fts = [(f1, t1), (f2, t2)]
+            for (fi,ti) in fts:
+                for sgrami in sgrams:
+                    sq_i = squares(sgrami, fi, ti, 2)
+                    feats_sur_i = np.concatenate(sq_i.tolist()).tolist()
+                    feats_sur_i.extend([sq_i[2*loc[0]][2*loc[1]]-2*sq_i[loc[0]][loc[1]] for loc in locs])
+                    feats_sur_i.extend([curvature(sq_i,pos) for pos in poss])
+                    feats_surs.append(feats_sur_i)
+            # delta E / delta x
+            feats_delta = [ (feats_e[1]-feats_e[0])/(f2-f1+0.1), (feats_e[1]-feats_e[0])/(t2-t1+0.1), (t2-t1)/(f2-f1+0.1) ]
+            feats_delta.extend([ (feats_eo[1]-feats_eo[0])/(f2-f1+0.1), (feats_eo[1]-feats_eo[0])/(t2-t1+0.1) ])
+            # Freq*Energy
+            feats_fe_1 = [feats_eo[0]*f1, feats_eo[0]*math.log1p(f1), math.log1p(feats_eo[0])*f1]
+            feats_fe_2 = [feats_eo[1]*f2, feats_eo[1]*math.log1p(f2), math.log1p(feats_eo[1])*f2]
+            feats_fe_12 = (np.array(feats_fe_1)*np.array(feats_fe_2)).tolist()
+            feats_fe = feats_fe_1 + feats_fe_2 + feats_fe_12
             # append to feats
-            feats = [Time,Freq]
+            feats = [Time,Freq] 
             feats.extend(feats_1)
             feats.extend(feats_2)
             feats.extend(dist)
             feats.extend(feats_e)
             feats.extend(feats_eo)
-            feats.extend(feats_sur_1)
-            feats.extend(feats_sur_2)
-            feats.extend(feats_suro_1)
-            feats.extend(feats_suro_2)
+            for feats_sur_i in feats_surs:
+                feats.extend(feats_sur_i)
+            feats.extend(feats_delta)
+            feats.extend(feats_fe)
             feats_list.append(feats)
         return np.array(feats_list), probs
 
