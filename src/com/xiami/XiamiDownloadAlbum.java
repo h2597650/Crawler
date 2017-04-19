@@ -70,7 +70,7 @@ public class XiamiDownloadAlbum {
 		}
 	}
 	
-	public InputStream proxyDownload(String urlStr, int delay) throws Exception {
+	public InputStream proxyDownload(String urlStr, int cdelay, int rdelay) throws Exception {
 		while(true) {
 			try{
 				if(myproxyList!=null && myproxyList.size()>0) {
@@ -83,7 +83,8 @@ public class XiamiDownloadAlbum {
 			        String headStr = myproxyList.get(idx).username+":"+myproxyList.get(idx).password;
 		            String headerValue = "Basic "+ Base64.getEncoder().encodeToString(headStr.getBytes());
 		            conn = url.openConnection(proxy);
-		            conn.setConnectTimeout(delay);
+		            conn.setConnectTimeout(cdelay);
+			        conn.setReadTimeout(rdelay);
 		            conn.setRequestProperty(headerkey, headerValue);
 		            //System.out.println(myproxyList.get(idx));
 		            InputStream inPage = conn.getInputStream();
@@ -91,13 +92,15 @@ public class XiamiDownloadAlbum {
 				} else{
 					URL url = new URL(urlStr);
 					URLConnection conn = url.openConnection();
-			        conn.setConnectTimeout(delay);
+			        conn.setConnectTimeout(cdelay);
+			        conn.setReadTimeout(rdelay);
 			        InputStream inPage = conn.getInputStream();
 			        return inPage;
 				}
 			} catch (Exception e) {
-				delay += 2000;
-				if(delay>10000)
+				cdelay += 2000;
+				rdelay += 2000;
+				if(cdelay>10000)
 					throw e;
 			    try {
 			    	Thread.sleep(500);
@@ -182,7 +185,7 @@ public class XiamiDownloadAlbum {
 					continue;
 				String jsonUrl = String.format(JsonStr,albumID);
 				try {
-					String jsonContent = IOUtils.toString(proxyDownload(jsonUrl, delay), "utf-8");
+					String jsonContent = IOUtils.toString(proxyDownload(jsonUrl, 1000+delay, 4000+delay), "utf-8");
 					JSONObject jsonObj= new JSONObject(jsonContent);
 					JSONArray songsObj = null;
 					try {
@@ -253,7 +256,7 @@ public class XiamiDownloadAlbum {
 				try {
 					String songFolder = "xiami_mp3/" + mkdirLevel(""+songID);
 					new File(songFolder).mkdirs();
-					InputStream inPage = proxyDownload(songUrl, delay);
+					InputStream inPage = proxyDownload(songUrl, 1000+delay, 35000+delay);
 			        try (FileOutputStream out = new FileOutputStream(songFolder + "/" + songID + ".mp3")) {
 			            IOUtils.copy(inPage, out);
 			        }
@@ -291,7 +294,8 @@ public class XiamiDownloadAlbum {
 			for (int i = 0; i < maxThreads; i++) threads.add(new Thread(jsonThread,"JsonThread "+i));
 			for (int i = 0; i < maxThreads; i++) threads.get(i).start();
 			for (int i = 0; i < maxThreads; i++) threads.get(i).join();
-			
+	
+            System.out.println("\n\n\n\nFetch songUrls completed!\n\n\n");
 	    	try {
 		    	BufferedWriter bufw = new BufferedWriter(new OutputStreamWriter(
 			    		new FileOutputStream("config/songsUrl.txt"), "UTF-8"));
@@ -304,6 +308,7 @@ public class XiamiDownloadAlbum {
 			    e.printStackTrace();
 		    }
 
+            System.out.println("\n\n\n\nStart downloading songs......\n\n\n");
 			SongDownloader songThread = downloader.new SongDownloader(jsonThread.songsList);
 			threads = new ArrayList<Thread>();
 			for (int i = 0; i < maxThreads; i++) threads.add(new Thread(songThread,"SongThread "+i));
