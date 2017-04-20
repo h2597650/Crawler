@@ -27,6 +27,7 @@ import hash_table
 # Access to match functions, used in command line interface
 import xgboost as xgb
 import numpy as np
+import pandas as pd
 
 def filename_list_iterator(filedir):
     """ Iterator to yeild all the filenames, possibly interpreting them
@@ -180,29 +181,43 @@ def main(argv):
     analyzer = setup_analyzer(args)
 
 
-    train_iter = filename_list_iterator(args['--train'])
-    eval_iter = filename_list_iterator(args['--eval'])
 
+    cols = analyzer.gen_cols()
     #######################
     # Run the main commmand
     #######################
 
-    # How many processors to use (multiprocessing)
-    ncores = int(args['--ncores'])
-    #feats_train,probs_train = gen_samples(analyzer, train_iter)
-    #feats_eval,probs_eval = gen_samples(analyzer, eval_iter)
-    feats_train,probs_train = gen_samples_multiproc(analyzer, train_iter, ncores)
-    feats_eval,probs_eval = gen_samples_multiproc(analyzer, eval_iter, ncores)
-    elapsedtime = time.clock() - initticks
-
+    ftrain = 'train.csv'
+    feval = 'eval.csv'
+    if args['--train'] and len(args['--train'])>0:
+        train_iter = filename_list_iterator(args['--train'])
+        eval_iter = filename_list_iterator(args['--eval'])
+        # How many processors to use (multiprocessing)
+        ncores = int(args['--ncores'])
+        #feats_train,probs_train = gen_samples(analyzer, train_iter)
+        #feats_eval,probs_eval = gen_samples(analyzer, eval_iter)
+        feats_train,probs_train = gen_samples_multiproc(analyzer, train_iter, ncores)
+        feats_eval,probs_eval = gen_samples_multiproc(analyzer, eval_iter, ncores)
+        elapsedtime = time.clock() - initticks
+        
+        ptrain = pd.DataFrame(np.concatenate([feats_train,probs_train],axis=1), columns=(cols+['label']))
+        peval = pd.DataFrame(np.concatenate([feats_eval,probs_eval],axis=1), columns=(cols+['label']))
+        ptrain.to_csv(ftrain, index=False)
+        ptrain.to_csv(feval, index=False)
+    else:
+        ptrain = pd.read_csv(ftrain, sep=",", engine='c')
+        peval = pd.read_csv(feval, sep=",", engine='c')
+    
     # train xgb
-    xtrain = xgb.DMatrix(feats_train, label=probs_train)
-    xeval = xgb.DMatrix(feats_eval, label=probs_eval)
+    xtrain = xgb.DMatrix(ptrain[cols], label=ptrain[['label']].values)
+    xeval = xgb.DMatrix(peval[cols], label=peval[['label']].values)
     print(np.mean(xtrain.get_label()), len(xtrain.get_label()))
     print(np.mean(xeval.get_label()), len(xeval.get_label()))
     param = {'max_depth':5, 'eta':0.02, 'subsample':0.6, 'colsample_bytree':0.8, 'base_score':0.5, 'objective':'reg:linear', 'eval_metric':'rmse'}
     watchlist = [(xtrain, 'train'), (xeval, 'eval')]
     m_xgb = xgb.train(param, xtrain, 2000, watchlist, early_stopping_rounds=50)
+    imp = m_xgb.get_fscore()
+    print(sorted(imp.items() , key = lambda d:d[1], reverse=True))
 
 
 # Run the main function if called from the command line

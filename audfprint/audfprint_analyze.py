@@ -82,10 +82,12 @@ def curvature(sq, pos):
     return a*b*c/math.sqrt(S2)
 
 def value_at(sgrams, px, py):
-    px_low = math.floor(px)
-    py_low = math.floor(py)
-    v_low = sgrams[px_low][py_low] + (px-px_low) * (sgrams[px_low+1][py_low] - sgrams[px_low][py_low])
-    v_high = sgrams[px_low][py_low+1] + (px-px_low) * (sgrams[px_low+1][py_low+1] - sgrams[px_low][py_low+1])
+    px_low = int(math.floor(px))
+    px_high = int(math.ceil(px))
+    py_low = int(math.floor(py))
+    py_high = int(math.ceil(py))
+    v_low = sgrams[px_low][py_low] + (px-px_low) * (sgrams[px_high][py_low] - sgrams[px_low][py_low])
+    v_high = sgrams[px_low][py_high] + (px-px_low) * (sgrams[px_high][py_high] - sgrams[px_low][py_high])
     value = v_low + (py-py_low) * (v_high-v_low)
     return value
 
@@ -556,7 +558,30 @@ class Analyzer(object):
         cols = ['Time', 'Freq']
         cols += ['t1', 't2', 'f1', 'f2', 'dt', 'df']
         cols += ['rt1', 'rt2', 'rf1', 'rf2', 'rdt', 'rdf']
+        cols += ['dist_ft', 'dist_rft', 'dist_fte', 'dist_rfte']
+        cols += ['e1', 'e2', 'e1+e2', 'e1*e2', 'e1-e2', '(e1-e2)/dist', '(e1-e2)/rdist']
+        cols += ['eo1', 'eo2', 'eo1+eo2', 'eo1*eo2', 'eo1-eo2', '(eo1-eo2)/dist', '(eo1-eo2)/rdist']
 
+        locs = [(-1,1),(0,1),(1,1),(-1,0),(1,0),(-1,-1),(0,-1),(1,-1)]
+        locs = [ (str(x[0]),str(x[1])) for x in locs]
+        poss = [(-1,1),(0,1),(1,1),(1,0)]
+        poss = [ (str(x[0]),str(x[1])) for x in poss]
+        sgrams = ['e','eo']
+        fts = [('f1', 't1'), ('f2', 't2')]
+        for (fi,ti) in fts:
+            for ei in sgrams:
+                cols += [ '_'.join([ei,fi,ti,str(x)]) for x in range(0,25)]
+                cols += [ '_'.join([ei,fi,ti,'hess',loc[0],loc[1]]) for loc in locs]
+                cols += [ '_'.join([ei,fi,ti,'curve',pos[0],pos[1]]) for pos in poss]
+        cols += ['de/df', 'de/dt', 'dt/de', 'rde/df', 'rde/dt']
+        eof1 = ['eo1*f1', 'eo1*log(f1)', 'log(eo1)*f1']
+        eof2 = ['eo2*f2', 'eo2*log(f2)', 'log(eo2)*f2']
+        eof12 = [ eof1[i]+eof2[i] for i in range(len(eof1))]
+        cols += (eof1 + eof2 + eof12)
+        line = [ 'line_'+str(i/10.0) for i in range(1,10)]
+        lineo = [ 'lineo_'+str(i/10.0) for i in range(1,10)]
+        cols += (line + lineo + ['line_mean', 'line_std','lineo_mean', 'lineo_std'])
+        return cols
     ########### functions to link to actual hash table index database #######
 
     def ingest(self, hashtable, filename):
