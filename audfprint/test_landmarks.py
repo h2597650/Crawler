@@ -200,9 +200,9 @@ def main(argv):
     xeval = xgb.DMatrix(feats_eval, label=probs_eval)
     print(np.mean(xtrain.get_label()), len(xtrain.get_label()))
     print(np.mean(xeval.get_label()), len(xeval.get_label()))
-    param = {'max_depth':5, 'eta':0.02, 'subsample':0.6, 'colsample_bytree':0.6, 'base_score':0.5, 'objective':'reg:linear', 'eval_metric':'rmse'}
+    param = {'max_depth':5, 'eta':0.02, 'subsample':0.6, 'colsample_bytree':0.8, 'base_score':0.5, 'objective':'reg:linear', 'eval_metric':'rmse'}
     watchlist = [(xtrain, 'train'), (xeval, 'eval')]
-    m_xgb = xgb.train(param, xtrain, 1000, watchlist, early_stopping_rounds=50)
+    m_xgb = xgb.train(param, xtrain, 2000, watchlist, early_stopping_rounds=50)
 
 
 # Run the main function if called from the command line

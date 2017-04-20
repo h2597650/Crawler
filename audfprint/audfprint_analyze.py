@@ -81,6 +81,13 @@ def curvature(sq, pos):
     S2 = (a+b+c)*(-a+b+c)*(a-b+c)*(a+b-c)
     return a*b*c/math.sqrt(S2)
 
+def value_at(sgrams, px, py):
+    px_low = math.floor(px)
+    py_low = math.floor(py)
+    v_low = sgrams[px_low][py_low] + (px-px_low) * (sgrams[px_low+1][py_low] - sgrams[px_low][py_low])
+    v_high = sgrams[px_low][py_low+1] + (px-px_low) * (sgrams[px_low+1][py_low+1] - sgrams[px_low][py_low+1])
+    value = v_low + (py-py_low) * (v_high-v_low)
+    return value
 
 # Constants for Analyzer
 # DENSITY controls the density of landmarks found (approx DENSITY per sec)
@@ -492,8 +499,6 @@ class Analyzer(object):
             feats_1 = [t1, t2, f1, f2, t2-t1, f2-f1]
             # ratio
             feats_2 = [t1/Time, t2/Time, f1/Freq, f2/Freq, (t2-t1)/Time, (f2-f1)/Freq]
-            # distance
-            dist = [math.sqrt(feats_1[4]**2+feats_2[5]**2), math.sqrt(feats_2[4]**2+feats_2[5]**2)]
             # energy
             feats_e = [sgram[f1][t1], sgram[f2][t2]]
             feats_e.extend([feats_e[0]+feats_e[1], feats_e[0]*feats_e[1]])
@@ -501,6 +506,10 @@ class Analyzer(object):
             feats_eo = [sgramo[f1][t1], sgramo[f2][t2]]
             feats_eo.extend([feats_eo[0]+feats_eo[1], feats_eo[0]*feats_eo[1]])
             feats_eo.extend([(feats_eo[1]-feats_eo[2]), (feats_eo[1]-feats_eo[2])/dist[0], (feats_eo[1]-feats_eo[2])/dist[1]])
+            # distance
+            dist = [math.sqrt(feats_1[4]**2+feats_2[5]**2), math.sqrt(feats_2[4]**2+feats_2[5]**2)]
+            dist += [math.sqrt(feats_1[4]**2+feats_2[5]**2+(feats_eo[0]-feats_eo[1])**2)]
+            dist += [math.sqrt(feats_2[4]**2+feats_2[5]**2+(feats_e[0]-feats_e[1])**2)]
             # engery surrounding
             locs = [(-1,1),(0,1),(1,1),(-1,0),(1,0),(-1,-1),(0,-1),(1,-1)]
             poss = [(-1,1),(0,1),(1,1),(1,0)]
@@ -522,6 +531,11 @@ class Analyzer(object):
             feats_fe_2 = [feats_eo[1]*f2, feats_eo[1]*math.log1p(f2), math.log1p(feats_eo[1])*f2]
             feats_fe_12 = (np.array(feats_fe_1)*np.array(feats_fe_2)).tolist()
             feats_fe = feats_fe_1 + feats_fe_2 + feats_fe_12
+            # line points
+            line = [ ( f1+(f2-f1)*i/10.0, t1+(t2-t1)*i/10.0 ) for i in range(1,10)]
+            line_values = [ value_at(sgram,p[0],p[1]) for p in line]
+            line_valueso = [ value_at(sgramo,p[0],p[1]) for p in line]
+            feats_line = line_values + line_valueso + [np.mean(line_values),np.std(line_values),np.mean(line_valueso),np.std(line_valueso)]
             # append to feats
             feats = [Time,Freq] 
             feats.extend(feats_1)
@@ -533,6 +547,7 @@ class Analyzer(object):
                 feats.extend(feats_sur_i)
             feats.extend(feats_delta)
             feats.extend(feats_fe)
+            feats.extend(feats_line)
             feats_list.append(feats)
         return np.array(feats_list), probs
 
