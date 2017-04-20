@@ -499,6 +499,8 @@ class Analyzer(object):
             feats_1 = [t1, t2, f1, f2, t2-t1, f2-f1]
             # ratio
             feats_2 = [t1/Time, t2/Time, f1/Freq, f2/Freq, (t2-t1)/Time, (f2-f1)/Freq]
+            # distance
+            dist = [math.sqrt(feats_1[4]**2+feats_2[5]**2), math.sqrt(feats_2[4]**2+feats_2[5]**2)]
             # energy
             feats_e = [sgram[f1][t1], sgram[f2][t2]]
             feats_e.extend([feats_e[0]+feats_e[1], feats_e[0]*feats_e[1]])
@@ -507,7 +509,6 @@ class Analyzer(object):
             feats_eo.extend([feats_eo[0]+feats_eo[1], feats_eo[0]*feats_eo[1]])
             feats_eo.extend([(feats_eo[1]-feats_eo[2]), (feats_eo[1]-feats_eo[2])/dist[0], (feats_eo[1]-feats_eo[2])/dist[1]])
             # distance
-            dist = [math.sqrt(feats_1[4]**2+feats_2[5]**2), math.sqrt(feats_2[4]**2+feats_2[5]**2)]
             dist += [math.sqrt(feats_1[4]**2+feats_2[5]**2+(feats_eo[0]-feats_eo[1])**2)]
             dist += [math.sqrt(feats_2[4]**2+feats_2[5]**2+(feats_e[0]-feats_e[1])**2)]
             # engery surrounding
@@ -550,7 +551,11 @@ class Analyzer(object):
             feats.extend(feats_line)
             feats_list.append(feats)
         return np.array(feats_list), probs
-
+    
+    def gen_cols(self):
+        cols = ['Time', 'Freq']
+        cols += ['t1', 't2', 'f1', 'f2', 'dt', 'df']
+        cols += ['rt1', 'rt2', 'rf1', 'rf2', 'rdt', 'rdf']
 
     ########### functions to link to actual hash table index database #######
 
