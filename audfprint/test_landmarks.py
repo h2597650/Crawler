@@ -51,13 +51,13 @@ def ensure_dir(dirname):
 # basic operations, each in a separate function
 
 def gen_samples_multiproc(analyzer, filename_iter, ncores):
-    samplelist = joblib.Parallel(n_jobs=ncores)(joblib.delayed(gen_samples)(analyzer,filename,False) for filename in filename_iter)
+    samplelist = joblib.Parallel(n_jobs=ncores)(joblib.delayed(gen_samples)(analyzer,filename,False,1000) for filename in filename_iter)
     feats = np.concatenate([x[0] for x in samplelist], axis=0)
     probs = np.concatenate([x[1] for x in samplelist], axis=0)
     print("Generated " +  str(len(feats)) + " samples")
     return feats,probs
 
-def gen_samples(analyzer, filename_iteri, iterFlag=True):
+def gen_samples(analyzer, filename_iteri, iterFlag=True, subsample=None):
 
     # Adding files
     feats_list = []
@@ -65,11 +65,11 @@ def gen_samples(analyzer, filename_iteri, iterFlag=True):
     ix = 0
     if not iterFlag:
         filename = filename_iteri
-        one_feats, one_probs = analyzer.wavfile2samples(filename)
+        one_feats, one_probs = analyzer.wavfile2samples(filename, subsample=subsample)
         print(time.ctime() + " convert #" + str(ix) + ": " + filename + " ..., " + str(len(one_feats)) + " samples")
         return one_feats,one_probs
     for filename in filename_iter:
-        one_feats, one_probs = analyzer.wavfile2samples(filename)
+        one_feats, one_probs = analyzer.wavfile2samples(filename, subsample=subsample)
         feats_list.append(one_feats)
         probs_list.append(one_probs)
         print(time.ctime() + " convert #" + str(ix) + ": " + filename + " ..., " + str(len(one_feats)) + " samples")
@@ -178,7 +178,8 @@ def main(argv):
     initticks = time.clock()
 
     # Setup the analyzer if we're using one (i.e., unless "merge")
-    analyzer = setup_analyzer(args)
+    #analyzer = setup_analyzer(args)
+    analyzer = audfprint_analyze.Analyzer()
 
 
 
@@ -203,7 +204,7 @@ def main(argv):
         ptrain = pd.DataFrame(np.concatenate([feats_train,probs_train],axis=1), columns=(cols+['label']))
         peval = pd.DataFrame(np.concatenate([feats_eval,probs_eval],axis=1), columns=(cols+['label']))
         ptrain.to_csv(ftrain, index=False)
-        ptrain.to_csv(feval, index=False)
+        peval.to_csv(feval, index=False)
     else:
         ptrain = pd.read_csv(ftrain, sep=",", engine='c')
         peval = pd.read_csv(feval, sep=",", engine='c')
@@ -213,12 +214,18 @@ def main(argv):
     xeval = xgb.DMatrix(peval[cols], label=peval[['label']].values)
     print(np.mean(xtrain.get_label()), len(xtrain.get_label()))
     print(np.mean(xeval.get_label()), len(xeval.get_label()))
-    param = {'max_depth':5, 'eta':0.02, 'subsample':0.6, 'colsample_bytree':0.8, 'base_score':0.5, 'objective':'reg:linear', 'eval_metric':'rmse'}
+    param = {'max_depth':5, 'eta':0.02, 'subsample':0.6, 'colsample_bytree':0.8, 'base_score':0.3, 'objective':'reg:linear', 'eval_metric':'rmse'}
     watchlist = [(xtrain, 'train'), (xeval, 'eval')]
-    m_xgb = xgb.train(param, xtrain, 2000, watchlist, early_stopping_rounds=50)
+    m_xgb = xgb.train(param, xtrain, 4000, watchlist, early_stopping_rounds=50)
     imp = m_xgb.get_fscore()
-    print(sorted(imp.items() , key = lambda d:d[1], reverse=True))
-
+    imp = sorted(imp.items() , key = lambda d:d[1], reverse=True)
+    print(imp)
+    
+    cols_imp = [x[0] for x in imp[0:100]]
+    xtrain = xgb.DMatrix(ptrain[cols_imp], label=ptrain[['label']].values)
+    xeval = xgb.DMatrix(peval[cols_imp], label=peval[['label']].values)
+    watchlist = [(xtrain, 'train'), (xeval, 'eval')]
+    m_xgb = xgb.train(param, xtrain, 4000, watchlist, early_stopping_rounds=50)
 
 # Run the main function if called from the command line
 if __name__ == "__main__":

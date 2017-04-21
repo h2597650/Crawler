@@ -163,9 +163,9 @@ class Analyzer(object):
         # how wide to spreak peaks
         self.f_sd = 30.0
         # Maximum number of local maxima to keep per frame
-        self.maxpksperframe = 5
+        self.maxpksperframe = 10
         # Limit the num of pairs we'll make from each peak (Fanout)
-        self.maxpairsperpeak = 30
+        self.maxpairsperpeak = 10
         # Values controlling peaks2landmarks
         # +/- 31 bins in freq (LIMITED TO -32..31 IN LANDMARK2HASH)
         self.targetdf = 31
@@ -456,10 +456,13 @@ class Analyzer(object):
         #print("wavfile2hashes: read", len(hashes), "hashes from", filename)
         return hashes
     
-    def wavfile2samples(self, filename, label=True):
+    def wavfile2samples(self, filename, label=True, subsample=None):
         landmarks = self.peaks2landmarks(self.wavfile2peaks(filename))
         d, sr = audio_read.audio_read(filename, sr=self.target_sr, channels=1)
         peaks,sgram,sgramo = self.find_peaks_sgram(d, sr)
+        if subsample and subsample<len(landmarks):
+            index = np.random.choice(len(landmarks), subsample, replace=False)
+            landmarks = [ landmarks[idx] for idx in index]
         lms_map = {}
         for lm in landmarks:
             lms_map[lm] = 0.0
@@ -539,6 +542,14 @@ class Analyzer(object):
             line_values = [ value_at(sgram,p[0],p[1]) for p in line]
             line_valueso = [ value_at(sgramo,p[0],p[1]) for p in line]
             feats_line = line_values + line_valueso + [np.mean(line_values),np.std(line_values),np.mean(line_valueso),np.std(line_valueso)]
+            # square points
+            square_line = []
+            for i in range(1,6):
+                for j in range(1,6):
+                    square_line.append( (f1+(f2-f1)*i/6.0, t1+(t2-t1)*i/6.0) )
+            sql_values = [ value_at(sgram,p[0],p[1]) for p in square_line]
+            sql_valueso = [ value_at(sgramo,p[0],p[1]) for p in square_line]
+            feats_sql = sql_values + sql_valueso + [np.mean(sql_values),np.std(sql_values),np.mean(sql_valueso),np.std(sql_valueso)]
             # append to feats
             feats = [Time,Freq] 
             feats.extend(feats_1)
@@ -551,6 +562,7 @@ class Analyzer(object):
             feats.extend(feats_delta)
             feats.extend(feats_fe)
             feats.extend(feats_line)
+            feats.extend(feats_sql)
             feats_list.append(feats)
         return np.array(feats_list), probs
     
@@ -581,6 +593,9 @@ class Analyzer(object):
         line = [ 'line_'+str(i/10.0) for i in range(1,10)]
         lineo = [ 'lineo_'+str(i/10.0) for i in range(1,10)]
         cols += (line + lineo + ['line_mean', 'line_std','lineo_mean', 'lineo_std'])
+        sql = [ 'sql_'+str(i) for i in range(25)]
+        sqlo = [ 'sqlo_'+str(i) for i in range(25)]
+        cols += (sql + sqlo + ['sql_mean', 'sql_std', 'sqlo_mean', 'sqlo_std'])
         return cols
     ########### functions to link to actual hash table index database #######
 
