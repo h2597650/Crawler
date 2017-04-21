@@ -50,8 +50,8 @@ def ensure_dir(dirname):
 
 # basic operations, each in a separate function
 
-def gen_samples_multiproc(analyzer, filename_iter, ncores):
-    samplelist = joblib.Parallel(n_jobs=ncores)(joblib.delayed(gen_samples)(analyzer,filename,False,1000) for filename in filename_iter)
+def gen_samples_multiproc(analyzer, filename_iter, ncores,subsample=None):
+    samplelist = joblib.Parallel(n_jobs=ncores)(joblib.delayed(gen_samples)(analyzer,filename,False,subsample) for filename in filename_iter)
     feats = np.concatenate([x[0] for x in samplelist], axis=0)
     probs = np.concatenate([x[1] for x in samplelist], axis=0)
     print("Generated " +  str(len(feats)) + " samples")
@@ -197,7 +197,7 @@ def main(argv):
         ncores = int(args['--ncores'])
         #feats_train,probs_train = gen_samples(analyzer, train_iter)
         #feats_eval,probs_eval = gen_samples(analyzer, eval_iter)
-        feats_train,probs_train = gen_samples_multiproc(analyzer, train_iter, ncores)
+        feats_train,probs_train = gen_samples_multiproc(analyzer, train_iter, ncores, 2000)
         feats_eval,probs_eval = gen_samples_multiproc(analyzer, eval_iter, ncores)
         elapsedtime = time.clock() - initticks
         
