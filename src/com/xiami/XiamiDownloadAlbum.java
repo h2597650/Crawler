@@ -235,7 +235,22 @@ public class XiamiDownloadAlbum {
 				songsList.put(entry.getKey(), 0);
 			}
 		}
-		@Override
+		
+        public SongDownloader(String songsFile) {
+			try (BufferedReader bufr = new BufferedReader(new InputStreamReader(
+						new FileInputStream(songsFile), "UTF-8"))) {
+				String line = null;
+				while( (line = bufr.readLine())!=null ) {
+                    String[] tmps = line.split(",");
+                    songsUrlMap.put(Long.parseLong(tmps[0]), tmps[1]);
+                    songsList.put(Long.parseLong(tmps[0]), 0);
+                }
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		}
+		
+        @Override
 		public void run() {
 			while(true) {
 				long songID;
@@ -289,6 +304,7 @@ public class XiamiDownloadAlbum {
 		
 		ArrayList<Thread> threads;
 		try {
+            /*
 			JsonDownloader jsonThread = downloader.new JsonDownloader("config/albums.txt");
 			threads = new ArrayList<Thread>();
 			for (int i = 0; i < maxThreads; i++) threads.add(new Thread(jsonThread,"JsonThread "+i));
@@ -307,9 +323,10 @@ public class XiamiDownloadAlbum {
 		    } catch (Exception e) {
 			    e.printStackTrace();
 		    }
-
+            */
             System.out.println("\n\n\n\nStart downloading songs......\n\n\n");
-			SongDownloader songThread = downloader.new SongDownloader(jsonThread.songsList);
+			//SongDownloader songThread = downloader.new SongDownloader(jsonThread.songsList);
+			SongDownloader songThread = downloader.new SongDownloader("config/songsUrl.txt");
 			threads = new ArrayList<Thread>();
 			for (int i = 0; i < maxThreads; i++) threads.add(new Thread(songThread,"SongThread "+i));
 			for (int i = 0; i < maxThreads; i++) threads.get(i).start();
