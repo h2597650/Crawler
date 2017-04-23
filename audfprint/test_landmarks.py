@@ -199,8 +199,7 @@ def main(argv):
         #feats_eval,probs_eval = gen_samples(analyzer, eval_iter)
         feats_train,probs_train = gen_samples_multiproc(analyzer, train_iter, ncores)
         feats_eval,probs_eval = gen_samples_multiproc(analyzer, eval_iter, ncores)
-        elapsedtime = time.clock() - initticks
-        
+
         ptrain = pd.DataFrame(np.concatenate([feats_train,probs_train],axis=1), columns=(cols+['label']))
         peval = pd.DataFrame(np.concatenate([feats_eval,probs_eval],axis=1), columns=(cols+['label']))
         ptrain.to_csv(ftrain, index=False)
@@ -210,21 +209,33 @@ def main(argv):
         peval = pd.read_csv(feval, sep=",", engine='c')
     
     # train xgb
+    probs_norm = ptrain[['label']].values + 0.1
+    probs_norm = probs_norm.transpose()[0]
+    probs_norm = probs_norm / probs_norm.sum()
+    sample_index = np.random.choice(len(probs_norm), int(0.2*len(probs_norm)), replace=False, p=probs_norm)
+    #ptrain = ptrain.iloc[sample_index]
+    #pevals = peval[peval.label>0.3]
+    pevals = peval
     xtrain = xgb.DMatrix(ptrain[cols], label=ptrain[['label']].values)
+    xevals = xgb.DMatrix(pevals[cols], label=pevals[['label']].values)
     xeval = xgb.DMatrix(peval[cols], label=peval[['label']].values)
     print(np.mean(xtrain.get_label()), len(xtrain.get_label()))
     print(np.mean(xeval.get_label()), len(xeval.get_label()))
     param = {'max_depth':5, 'eta':0.02, 'subsample':0.6, 'colsample_bytree':0.8, 'base_score':0.3, 'objective':'reg:linear', 'eval_metric':'rmse'}
-    watchlist = [(xtrain, 'train'), (xeval, 'eval')]
+    watchlist = [(xtrain, 'train'), (xevals, 'eval')]
     m_xgb = xgb.train(param, xtrain, 4000, watchlist, early_stopping_rounds=50)
     imp = m_xgb.get_fscore()
     imp = sorted(imp.items() , key = lambda d:d[1], reverse=True)
     print(imp)
-    
+    prds = m_xgb.predict(xeval)
+    prds = zip(prds,peval[['label']].values.transpose()[0])
+    prds = sorted(prds, key=lambda d:d[0], reverse=True)
+    print(np.mean([x[1] for x in prds[0:int(0.2*len(prds))]]))
+
+
+    exit()
     cols_imp = [x[0] for x in imp[0:100]]
-    xtrain = xgb.DMatrix(ptrain[cols_imp], label=ptrain[['label']].values)
-    xeval = xgb.DMatrix(peval[cols_imp], label=peval[['label']].values)
-    watchlist = [(xtrain, 'train'), (xeval, 'eval')]
+    watchlist = [(xtrain, 'train'), (xeval, 'evals')]
     m_xgb = xgb.train(param, xtrain, 4000, watchlist, early_stopping_rounds=50)
 
 # Run the main function if called from the command line

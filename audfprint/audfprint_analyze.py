@@ -543,6 +543,7 @@ class Analyzer(object):
             line_valueso = [ value_at(sgramo,p[0],p[1]) for p in line]
             feats_line = line_values + line_valueso + [np.mean(line_values),np.std(line_values),np.mean(line_valueso),np.std(line_valueso)]
             # square points
+            '''
             square_line = []
             for i in range(1,6):
                 for j in range(1,6):
@@ -550,6 +551,7 @@ class Analyzer(object):
             sql_values = [ value_at(sgram,p[0],p[1]) for p in square_line]
             sql_valueso = [ value_at(sgramo,p[0],p[1]) for p in square_line]
             feats_sql = sql_values + sql_valueso + [np.mean(sql_values),np.std(sql_values),np.mean(sql_valueso),np.std(sql_valueso)]
+            '''
             # append to feats
             feats = [Time,Freq] 
             feats.extend(feats_1)
@@ -562,7 +564,7 @@ class Analyzer(object):
             feats.extend(feats_delta)
             feats.extend(feats_fe)
             feats.extend(feats_line)
-            feats.extend(feats_sql)
+            #feats.extend(feats_sql)
             feats_list.append(feats)
         return np.array(feats_list), probs
     
@@ -595,7 +597,7 @@ class Analyzer(object):
         cols += (line + lineo + ['line_mean', 'line_std','lineo_mean', 'lineo_std'])
         sql = [ 'sql_'+str(i) for i in range(25)]
         sqlo = [ 'sqlo_'+str(i) for i in range(25)]
-        cols += (sql + sqlo + ['sql_mean', 'sql_std', 'sqlo_mean', 'sqlo_std'])
+        #cols += (sql + sqlo + ['sql_mean', 'sql_std', 'sqlo_mean', 'sqlo_std'])
         return cols
     ########### functions to link to actual hash table index database #######
 
