@@ -482,7 +482,7 @@ class Analyzer(object):
                 test_cnt += 1.0
                 lms_test = self.peaks2landmarks(peaklist[idx])
                 for (t1,f1,f2,dt) in lms_test:
-                    for t in range(t1-1,t1+2):
+                    for t in range(t1,t1+1):
                         key = (t,f1,f2,dt)
                         if key in lms_map:
                             lms_map[key] += 1.0
