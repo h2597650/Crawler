@@ -29,6 +29,11 @@ import xgboost as xgb
 import numpy as np
 import pandas as pd
 
+from keras.models import Sequential
+from keras.layers.core import Dense, Activation
+from keras.optimizers import SGD, Adadelta, Adagrad
+from keras.layers.advanced_activations import LeakyReLU
+
 def filename_list_iterator(filedir):
     """ Iterator to yeild all the filenames, possibly interpreting them
         as list files, prepending wavdir """
@@ -207,7 +212,40 @@ def main(argv):
     else:
         ptrain = pd.read_csv(ftrain, sep=",", engine='c')
         peval = pd.read_csv(feval, sep=",", engine='c')
+    train_xgb(ptrain,peval,cols)
+    train_keras(ptrain,peval,cols)
+
+def normalize(ptrain,peval,cols):
+    train_x,eval_x = ptrain[cols],peval[cols]
+    train_y,eval_y = ptrain[['label']],peval[['label']]
+    all_x = pd.concat([train_x,eval_x])
+    dmin, dmax = all_x.min(axis=0), all_x.max(axis=0)
+    train_x = (train_x - dmin) / (dmax - dmin + 0.1)
+    eval_x = (eval_x - dmin) / (dmax - dmin + 0.1)
+    return train_x.values,eval_x.values,train_y.values,eval_y.values
+def train_keras(ptrain,peval,cols):
+    train_x,eval_x,train_y,eval_y = normalize(ptrain,peval,cols)
+    print(train_x.shape, eval_x.shape)
+    print(train_y.shape, eval_y.shape)
+    model = Sequential()
+    model.add(Dense(100, kernel_initializer='uniform', input_dim=train_x.shape[1]))
+    model.add(Activation('relu'))
+
+    model.add(Dense(100))
+    model.add(Activation('relu'))
     
+    model.add(Dense(100))
+    model.add(Activation('relu'))
+
+    model.add(Dense(1))
+
+    adadelta = Adadelta(lr=1.0, rho=0.95, epsilon=1e-06)
+    model.compile(loss='mean_squared_error', optimizer=adadelta)
+    hist = model.fit(train_x, train_y, batch_size=100, epochs=150, shuffle=True,verbose=2,validation_data=(eval_x,eval_y))
+    score = model.evaluate(eval_x, eval_y, batch_size=100)
+    print('eval final rmae : ', score)
+
+def train_xgb(ptrain,peval,cols):
     # train xgb
     probs_norm = ptrain[['label']].values + 0.1
     probs_norm = probs_norm.transpose()[0]
