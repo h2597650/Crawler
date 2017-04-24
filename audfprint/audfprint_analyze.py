@@ -407,11 +407,13 @@ class Analyzer(object):
                 # Calculate hashes with optional part-frame shifts
                 peaklists = []
                 for shift in range(shifts):
-                    shiftsamps = int(float(shift)/self.shifts*self.n_hop)
-                    peaks = self.find_peaks(d[shiftsamps:], sr)
+                    shiftsamps = int(float(shift)/shifts*self.n_hop)
+                    peaks,sgram,sgramo = self.find_peaks_sgram(d[shiftsamps:], sr)
+                    shiftsgram = math.floor(len(d)/self.n_hop) - math.floor((len(d)-shiftsamps)/self.n_hop)
+                    shiftsgram = int(shiftsgram)
                     for i in range(len(peaks)):
                         (t1,f1) = peaks[i]
-                        peaks[i] = (t1+shiftsamps,f1)
+                        peaks[i] = (t1+shiftsgram,f1)
                     peaklists.append(peaks)
                 peaks = peaklists
 
