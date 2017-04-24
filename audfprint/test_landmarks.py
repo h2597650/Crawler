@@ -202,7 +202,7 @@ def main(argv):
         ncores = int(args['--ncores'])
         #feats_train,probs_train = gen_samples(analyzer, train_iter)
         #feats_eval,probs_eval = gen_samples(analyzer, eval_iter)
-        feats_train,probs_train = gen_samples_multiproc(analyzer, train_iter, ncores)
+        feats_train,probs_train = gen_samples_multiproc(analyzer, train_iter, ncores, 5000)
         feats_eval,probs_eval = gen_samples_multiproc(analyzer, eval_iter, ncores)
 
         ptrain = pd.DataFrame(np.concatenate([feats_train,probs_train],axis=1), columns=(cols+['label']))

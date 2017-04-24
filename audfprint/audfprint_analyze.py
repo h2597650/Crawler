@@ -93,14 +93,14 @@ def value_at(sgrams, px, py):
 
 # Constants for Analyzer
 # DENSITY controls the density of landmarks found (approx DENSITY per sec)
-DENSITY = 20.0 #100.0,20.0
+DENSITY = 100.0 #100.0,20.0
 # OVERSAMP > 1 tries to generate extra landmarks by decaying faster
 OVERSAMP = 1
 ## 512 pt FFT @ 11025 Hz, 50% hop
 #t_win = 0.0464
 #t_hop = 0.0232
 # Just specify n_fft
-N_FFT = 512 #2048,512
+N_FFT = 2048 #2048,512
 N_HOP = 256
 # spectrogram enhancement
 HPF_POLE = 0.98
