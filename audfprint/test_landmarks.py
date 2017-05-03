@@ -29,10 +29,12 @@ import xgboost as xgb
 import numpy as np
 import pandas as pd
 
+np.random.seed(1337)
 from keras.models import Sequential
 from keras.layers.core import Dense, Activation
 from keras.optimizers import SGD, Adadelta, Adagrad
 from keras.layers.advanced_activations import LeakyReLU
+from keras.initializers import Constant
 
 def filename_list_iterator(filedir):
     """ Iterator to yeild all the filenames, possibly interpreting them
@@ -202,9 +204,9 @@ def main(argv):
         ncores = int(args['--ncores'])
         #feats_train,probs_train = gen_samples(analyzer, train_iter)
         #feats_eval,probs_eval = gen_samples(analyzer, eval_iter)
-        feats_train,probs_train = gen_samples_multiproc(analyzer, train_iter, ncores, 5000)
-        feats_eval,probs_eval = gen_samples_multiproc(analyzer, eval_iter, ncores)
-
+        feats_train,probs_train = gen_samples_multiproc(analyzer, train_iter, ncores, 1000)
+        feats_eval,probs_eval = gen_samples_multiproc(analyzer, eval_iter, ncores, 1000)
+        
         ptrain = pd.DataFrame(np.concatenate([feats_train,probs_train],axis=1), columns=(cols+['label']))
         peval = pd.DataFrame(np.concatenate([feats_eval,probs_eval],axis=1), columns=(cols+['label']))
         ptrain.to_csv(ftrain, index=False)
@@ -212,7 +214,7 @@ def main(argv):
     else:
         ptrain = pd.read_csv(ftrain, sep=",", engine='c')
         peval = pd.read_csv(feval, sep=",", engine='c')
-    train_xgb(ptrain,peval,cols)
+    #train_xgb(ptrain,peval,cols)
     train_keras(ptrain,peval,cols)
 
 def normalize(ptrain,peval,cols):
@@ -229,19 +231,27 @@ def train_keras(ptrain,peval,cols):
     print(train_y.shape, eval_y.shape)
     model = Sequential()
     model.add(Dense(100, kernel_initializer='uniform', input_dim=train_x.shape[1]))
-    model.add(Activation('relu'))
+    #model.add(Activation(LeakyReLU(0.1)))
+    model.add(Activation('sigmoid'))
 
-    model.add(Dense(100))
-    model.add(Activation('relu'))
+    #model.add(Dense(100))
+    #model.add(Activation(LeakyReLU(0.1)))
+    
+    #model.add(Dense(100))
+    #model.add(Activation(LeakyReLU(0.1)))
     
     model.add(Dense(100))
-    model.add(Activation('relu'))
-
+    model.add(Activation('sigmoid'))
+    
+    model.add(Dense(100))
+    model.add(Activation('sigmoid'))
+    
     model.add(Dense(1))
 
+    sgd = SGD(lr=0.01, decay=1e-10, momentum=0.9, nesterov=True)
     adadelta = Adadelta(lr=1.0, rho=0.95, epsilon=1e-06)
-    model.compile(loss='mean_squared_error', optimizer=adadelta)
-    hist = model.fit(train_x, train_y, batch_size=100, epochs=150, shuffle=True,verbose=2,validation_data=(eval_x,eval_y))
+    model.compile(loss='mse', optimizer=adadelta)
+    hist = model.fit(train_x, train_y, batch_size=128, epochs=5000, shuffle=True, verbose=2, validation_data=(eval_x,eval_y))
     score = model.evaluate(eval_x, eval_y, batch_size=100)
     print('eval final rmae : ', score)
 
