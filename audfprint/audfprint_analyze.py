@@ -491,7 +491,6 @@ class Analyzer(object):
                             break
             for idx, key in enumerate(landmarks):
                 probs[idx] = lms_map[key] / test_cnt
-        
         # features
         feats_list = []
         (Freq,Time) = np.shape(sgram)

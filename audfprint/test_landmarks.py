@@ -86,17 +86,34 @@ def gen_samples(analyzer, filename_iteri, iterFlag=True, subsample=None):
     print("Generated " +  str(len(feats)) + " samples")
     return feats,probs
 
+def extract_landmarks(analyzer, m_xgb, mp3_iter, dest_folder, ncores):
+    ensure_dir(dest_folder)
+    retList = joblib.Parallel(n_jobs=ncores)(joblib.delayed(gen_hashes)(analyzer,filename,m_xgb,dest_folder) for filename in mp3_iter)
+    for x in retList:
+        if not x:
+            return False
+    return True
+
+
 def gen_hashes(analyzer, filename, m_xgb, dest_folder):
     one_feats, one_probs = analyzer.wavfile2samples(filename, label=False)
+    print(time.ctime() + " extract #" + ": " + filename + " ..., " + str(len(one_feats)) + " feats")
     xprds = xgb.DMatrix(one_feats)
     prds = m_xgb.predict(xprds)
+    print(time.ctime() + " predict #" + ": " + filename + " ..., ")
     landmarks = [(f[0], f[2], f[3], f[4]) for f in one_feats]
     prds = zip(prds, landmarks)
     prds = sorted(prds, key=lambda d:d[0], reverse=True)
     landmarks = [x[1] for x in prds]
     hashes = audfprint_analyze.landmarks2hashes(landmarks)
-    openfile and write
-    print(time.ctime() + " extract #" + str(ix) + ": " + filename + " ..., " + str(len(one_feats)) + " landmarks")
+    mp3_name = os.path.basename(filename).split('.')[0]
+    hash_name = os.path.join(dest_folder, mp3_name+'.lmfp')
+    with open(hash_name, 'w') as hash_f:
+        for (time_, hash_) in hashes:
+            hash_f.write(','.join([hash_,time_]) + '\n')
+        hash_f.flush()
+    print(time.ctime() + " extract #" + ": " + filename + " ..., " + str(len(one_feats)) + " hashes")
+    return True
 
 # Command to separate out setting of analyzer parameters
 def setup_analyzer(args):
@@ -210,11 +227,11 @@ def main(argv):
 
     ftrain = 'train.csv'
     feval = 'eval.csv'
+    ncores = int(args['--ncores'])
     if args['--train'] and len(args['--train'])>0:
         train_iter = filename_list_iterator(args['--train'])
         eval_iter = filename_list_iterator(args['--eval'])
         # How many processors to use (multiprocessing)
-        ncores = int(args['--ncores'])
         #feats_train,probs_train = gen_samples(analyzer, train_iter)
         #feats_eval,probs_eval = gen_samples(analyzer, eval_iter)
         feats_train,probs_train = gen_samples_multiproc(analyzer, train_iter, ncores, 1000)
@@ -230,12 +247,9 @@ def main(argv):
     m_xgb = train_xgb(ptrain,peval,cols)
     if args['--file'] and len(args['--file'])>0:
         mp3_iter = filename_list_iterator(args['--file'])
-        extract_landmarks(m_xgb, mp3_iter, args['--dest'])
+        extract_landmarks(analyzer, m_xgb, mp3_iter, args['--dest'], ncores)
     #train_keras(ptrain,peval,cols)
 
-def extract_landmarks(m_xgb, mp3_iter, dest_folder):
-    ensure_dir(dest_folder)
-    os.path.join(dest_folder,aaa)
 
 
 def normalize(ptrain,peval,cols):
@@ -286,14 +300,14 @@ def train_xgb(ptrain,peval,cols):
     print(np.mean(xeval.get_label()), len(xeval.get_label()))
     param = {'max_depth':5, 'eta':0.02, 'subsample':0.6, 'colsample_bytree':0.8, 'base_score':0.3, 'objective':'reg:linear', 'eval_metric':'rmse'}
     watchlist = [(xtrain, 'train'), (xevals, 'eval')]
-    m_xgb = xgb.train(param, xtrain, 4000, watchlist, early_stopping_rounds=50)
+    m_xgb = xgb.train(param, xtrain, 100, watchlist, early_stopping_rounds=50)
     imp = m_xgb.get_fscore()
     imp = sorted(imp.items() , key = lambda d:d[1], reverse=True)
     print(imp)
     prds = m_xgb.predict(xeval)
     prds = zip(prds,peval[['label']].values.transpose()[0])
     prds = sorted(prds, key=lambda d:d[0], reverse=True)
-    print(np.mean([x[1] for x in prds[0:int(0.2*len(prds))]]))
+    print('score :', np.mean([x[1] for x in prds[0:int(0.2*len(prds))]]))
 
     #cols_imp = [x[0] for x in imp[0:100]]
     #watchlist = [(xtrain, 'train'), (xeval, 'evals')]
