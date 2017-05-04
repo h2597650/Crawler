@@ -97,10 +97,10 @@ def extract_landmarks(analyzer, m_xgb, mp3_iter, dest_folder, ncores):
 
 def gen_hashes(analyzer, filename, m_xgb, dest_folder):
     one_feats, one_probs = analyzer.wavfile2samples(filename, label=False)
-    print(time.ctime() + " extract #" + ": " + filename + " ..., " + str(len(one_feats)) + " feats")
+    #print(time.ctime() + " extract #" + ": " + filename + " ..., " + str(len(one_feats)) + " feats")
     xprds = xgb.DMatrix(one_feats)
     prds = m_xgb.predict(xprds)
-    print(time.ctime() + " predict #" + ": " + filename + " ..., ")
+    #print(time.ctime() + " predict #" + ": " + filename + " ..., ")
     landmarks = [(f[0], f[2], f[3], f[4]) for f in one_feats]
     prds = zip(prds, landmarks)
     prds = sorted(prds, key=lambda d:d[0], reverse=True)
