@@ -99,10 +99,10 @@ def extract_landmarks(analyzer, m_xgb, mp3_iter, dest_folder, cols, ncores):
 
 def gen_hashes(analyzer, filename, m_xgb, dest_folder, cols):
     one_feats, one_probs = analyzer.wavfile2samples(filename, label=False)
-    print(time.ctime() + " extract #" + ": " + filename + " ..., " + str(len(one_feats)) + " feats")
+    #print(time.ctime() + " extract #" + ": " + filename + " ..., " + str(len(one_feats)) + " feats")
     xprds = xgb.DMatrix(one_feats, feature_names=cols)
     prds = m_xgb.predict(xprds)
-    print(time.ctime() + " predict #" + ": " + filename)
+    #print(time.ctime() + " predict #" + ": " + filename)
     landmarks = [(int(f[2]), int(f[4]), int(f[5]), int(f[6])) for f in one_feats]
     prds = zip(prds, landmarks)
     prds = sorted(prds, key=lambda d:d[0], reverse=True)
@@ -114,7 +114,7 @@ def gen_hashes(analyzer, filename, m_xgb, dest_folder, cols):
         for (time_, hash_) in hashes:
             hash_f.write(str(hash_) + '\t' + str(time_) + '\n')
         hash_f.flush()
-    print(time.ctime() + " save #" + ": " + filename + " hashes")
+    print(time.ctime() + " save #" + ": " + filename + " " + str(len(one_feats)) + " hashes")
     return True
 
 # Command to separate out setting of analyzer parameters
@@ -288,12 +288,14 @@ def train_keras(ptrain,peval,cols):
 
 def train_xgb(ptrain,peval,cols):
     # train xgb
+    '''
     probs_norm = ptrain[['label']].values + 0.1
     probs_norm = probs_norm.transpose()[0]
     probs_norm = probs_norm / probs_norm.sum()
     sample_index = np.random.choice(len(probs_norm), int(0.2*len(probs_norm)), replace=False, p=probs_norm)
-    #ptrain = ptrain.iloc[sample_index]
-    #pevals = peval[peval.label>0.3]
+    ptrain = ptrain.iloc[sample_index]
+    pevals = peval[peval.label>0.3]
+    '''
     pevals = peval
     xtrain = xgb.DMatrix(ptrain[cols], label=ptrain[['label']].values)
     xevals = xgb.DMatrix(pevals[cols], label=pevals[['label']].values)
