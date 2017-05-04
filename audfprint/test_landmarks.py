@@ -36,6 +36,9 @@ from keras.optimizers import SGD, Adadelta, Adagrad
 from keras.layers.advanced_activations import LeakyReLU
 from keras.initializers import Constant
 
+import multiprocessing
+
+
 def filename_list_iterator(filedir):
     """ Iterator to yeild all the filenames, possibly interpreting them
         as list files, prepending wavdir """
@@ -87,9 +90,13 @@ def gen_samples(analyzer, filename_iteri, iterFlag=True, subsample=None):
     return feats,probs
 
 def extract_landmarks(analyzer, m_xgb, mp3_iter, dest_folder, cols, ncores):
-    #for filename in mp3_iter:
-    #    gen_hashes(analyzer,filename,m_xgb,dest_folder,cols)
     ensure_dir(dest_folder)
+    pool = multiprocessing.Pool(processes = ncores)
+    for filename in mp3_iter:
+        pool.apply_async(gen_hashes, (analyzer,filename,m_xgb,dest_folder,cols, ))
+    pool.close()
+    pool.join()
+    return True
     retList = joblib.Parallel(n_jobs=ncores)(joblib.delayed(gen_hashes)(analyzer,filename,m_xgb,dest_folder,cols) for filename in mp3_iter)
     for x in retList:
         if not x:
