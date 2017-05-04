@@ -106,9 +106,9 @@ N_HOP = 256
 HPF_POLE = 0.98
 
 # Globals defining packing of landmarks into hashes
-F1_BITS = 8
-DF_BITS = 6
-DT_BITS = 6
+F1_BITS = 10 #8
+DF_BITS = 8 #6
+DT_BITS = 7 #6
 # derived constants
 B1_MASK = (1 << F1_BITS) - 1
 B1_SHIFT = DF_BITS + DT_BITS

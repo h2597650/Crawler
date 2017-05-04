@@ -86,6 +86,17 @@ def gen_samples(analyzer, filename_iteri, iterFlag=True, subsample=None):
     print("Generated " +  str(len(feats)) + " samples")
     return feats,probs
 
+def gen_hashes(analyzer, filename, m_xgb, dest_folder):
+    one_feats, one_probs = analyzer.wavfile2samples(filename, label=False)
+    xprds = xgb.DMatrix(one_feats)
+    prds = m_xgb.predict(xprds)
+    landmarks = [(f[0], f[2], f[3], f[4]) for f in one_feats]
+    prds = zip(prds, landmarks)
+    prds = sorted(prds, key=lambda d:d[0], reverse=True)
+    landmarks = [x[1] for x in prds]
+    hashes = audfprint_analyze.landmarks2hashes(landmarks)
+    openfile and write
+    print(time.ctime() + " extract #" + str(ix) + ": " + filename + " ..., " + str(len(one_feats)) + " landmarks")
 
 # Command to separate out setting of analyzer parameters
 def setup_analyzer(args):
@@ -144,6 +155,8 @@ Usage: audfprint [options]
 Options:
   -t <dir>, --train <dir>         train set dir [default: ]     
   -e <dir>, --eval <dir>          eval set dir [default: ]     
+  -f <dir>, --file <dir>          files dir [default: ]     
+  -d <dir>, --dest <dir>          extract lanmarkds dir [default: ]     
   -n <dens>, --density <dens>     Target hashes per second [default: 20.0]
   -h <bits>, --hashbits <bits>    How many bits in each hash [default: 20]
   -b <val>, --bucketsize <val>    Number of entries per bucket [default: 100]
@@ -214,8 +227,16 @@ def main(argv):
     else:
         ptrain = pd.read_csv(ftrain, sep=",", engine='c')
         peval = pd.read_csv(feval, sep=",", engine='c')
-    #train_xgb(ptrain,peval,cols)
-    train_keras(ptrain,peval,cols)
+    m_xgb = train_xgb(ptrain,peval,cols)
+    if args['--file'] and len(args['--file'])>0:
+        mp3_iter = filename_list_iterator(args['--file'])
+        extract_landmarks(m_xgb, mp3_iter, args['--dest'])
+    #train_keras(ptrain,peval,cols)
+
+def extract_landmarks(m_xgb, mp3_iter, dest_folder):
+    ensure_dir(dest_folder)
+    os.path.join(dest_folder,aaa)
+
 
 def normalize(ptrain,peval,cols):
     train_x,eval_x = ptrain[cols],peval[cols]
@@ -234,17 +255,11 @@ def train_keras(ptrain,peval,cols):
     #model.add(Activation(LeakyReLU(0.1)))
     model.add(Activation('sigmoid'))
 
-    #model.add(Dense(100))
-    #model.add(Activation(LeakyReLU(0.1)))
-    
-    #model.add(Dense(100))
-    #model.add(Activation(LeakyReLU(0.1)))
+    model.add(Dense(100))
+    model.add(Activation(LeakyReLU(0.1)))
     
     model.add(Dense(100))
-    model.add(Activation('sigmoid'))
-    
-    model.add(Dense(100))
-    model.add(Activation('sigmoid'))
+    model.add(Activation(LeakyReLU(0.1)))
     
     model.add(Dense(1))
 
@@ -280,11 +295,10 @@ def train_xgb(ptrain,peval,cols):
     prds = sorted(prds, key=lambda d:d[0], reverse=True)
     print(np.mean([x[1] for x in prds[0:int(0.2*len(prds))]]))
 
-
-    exit()
-    cols_imp = [x[0] for x in imp[0:100]]
-    watchlist = [(xtrain, 'train'), (xeval, 'evals')]
-    m_xgb = xgb.train(param, xtrain, 4000, watchlist, early_stopping_rounds=50)
+    #cols_imp = [x[0] for x in imp[0:100]]
+    #watchlist = [(xtrain, 'train'), (xeval, 'evals')]
+    #m_xgb = xgb.train(param, xtrain, 4000, watchlist, early_stopping_rounds=50)
+    return m_xgb
 
 # Run the main function if called from the command line
 if __name__ == "__main__":
