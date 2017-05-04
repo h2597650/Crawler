@@ -474,11 +474,11 @@ class Analyzer(object):
         if label:
             test_cnt = 0.0
             # move a slide
-            peaklist = self.wavfile2peaks(filename, 20)
-            peaklist = peaklist[3:17]
+            peaklist = self.wavfile2peaks(filename, 40)
+            peaklist = peaklist[6:34]
             # test with wgn
-            for db in range(20,41):
-                test_d = wgn(d, db)
+            for db in range(40,121):
+                test_d = wgn(d, db/3.0)
                 peaklist.append(self.find_peaks(test_d, sr))
             for idx in range(len(peaklist)):
                 test_cnt += 1.0

@@ -89,26 +89,34 @@ def gen_samples(analyzer, filename_iteri, iterFlag=True, subsample=None):
     print("Generated " +  str(len(feats)) + " samples")
     return feats,probs
 
+
+
 def extract_landmarks(analyzer, m_xgb, mp3_iter, dest_folder, cols, ncores):
     ensure_dir(dest_folder)
-    pool = multiprocessing.Pool(processes = ncores)
+    
+    lock = multiprocessing.Manager().Lock()
+    pool = multiprocessing.Manager().Pool(processes = ncores)
     for filename in mp3_iter:
-        pool.apply_async(gen_hashes, (analyzer,filename,m_xgb,dest_folder,cols, ))
+        pool.apply_async(gen_hashes, (lock,analyzer,filename,m_xgb,dest_folder,cols, ))
     pool.close()
     pool.join()
     return True
-    retList = joblib.Parallel(n_jobs=ncores)(joblib.delayed(gen_hashes)(analyzer,filename,m_xgb,dest_folder,cols) for filename in mp3_iter)
+    '''
+    retList = joblib.Parallel(n_jobs=ncores)(joblib.delayed(gen_hashes)(lock,analyzer,filename,m_xgb,dest_folder,cols) for filename in mp3_iter)
     for x in retList:
         if not x:
             return False
     return True
+    ''' 
 
 
-def gen_hashes(analyzer, filename, m_xgb, dest_folder, cols):
+def gen_hashes(lock, analyzer, filename, m_xgb, dest_folder, cols):
     one_feats, one_probs = analyzer.wavfile2samples(filename, label=False)
     #print(time.ctime() + " extract #" + ": " + filename + " ..., " + str(len(one_feats)) + " feats")
+    q
     xprds = xgb.DMatrix(one_feats, feature_names=cols)
-    prds = m_xgb.predict(xprds)
+    with lock:
+        prds = m_xgb.predict(xprds)
     #print(time.ctime() + " predict #" + ": " + filename)
     landmarks = [(int(f[2]), int(f[4]), int(f[5]), int(f[6])) for f in one_feats]
     prds = zip(prds, landmarks)
@@ -243,8 +251,8 @@ def main(argv):
         # How many processors to use (multiprocessing)
         #feats_train,probs_train = gen_samples(analyzer, train_iter)
         #feats_eval,probs_eval = gen_samples(analyzer, eval_iter)
-        feats_train,probs_train = gen_samples_multiproc(analyzer, train_iter, ncores, 1000)
-        feats_eval,probs_eval = gen_samples_multiproc(analyzer, eval_iter, ncores, 1000)
+        feats_train,probs_train = gen_samples_multiproc(analyzer, train_iter, ncores, 5000)
+        feats_eval,probs_eval = gen_samples_multiproc(analyzer, eval_iter, ncores, 5000)
         
         ptrain = pd.DataFrame(np.concatenate([feats_train,probs_train],axis=1), columns=(cols+['label']))
         peval = pd.DataFrame(np.concatenate([feats_eval,probs_eval],axis=1), columns=(cols+['label']))
