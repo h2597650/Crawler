@@ -87,8 +87,8 @@ def gen_samples(analyzer, filename_iteri, iterFlag=True, subsample=None):
     return feats,probs
 
 def extract_landmarks(analyzer, m_xgb, mp3_iter, dest_folder, cols, ncores):
-    for filename in mp3_iter:
-        gen_hashes(analyzer,filename,m_xgb,dest_folder,cols)
+    #for filename in mp3_iter:
+    #    gen_hashes(analyzer,filename,m_xgb,dest_folder,cols)
     ensure_dir(dest_folder)
     retList = joblib.Parallel(n_jobs=ncores)(joblib.delayed(gen_hashes)(analyzer,filename,m_xgb,dest_folder,cols) for filename in mp3_iter)
     for x in retList:
@@ -102,8 +102,8 @@ def gen_hashes(analyzer, filename, m_xgb, dest_folder, cols):
     print(time.ctime() + " extract #" + ": " + filename + " ..., " + str(len(one_feats)) + " feats")
     xprds = xgb.DMatrix(one_feats, feature_names=cols)
     prds = m_xgb.predict(xprds)
-    print(time.ctime() + " predict #" + ": " + filename + " ..., ")
-    landmarks = [(int(f[0]), int(f[2]), int(f[3]), int(f[4])) for f in one_feats]
+    print(time.ctime() + " predict #" + ": " + filename)
+    landmarks = [(int(f[2]), int(f[4]), int(f[5]), int(f[6])) for f in one_feats]
     prds = zip(prds, landmarks)
     prds = sorted(prds, key=lambda d:d[0], reverse=True)
     landmarks = [x[1] for x in prds]
@@ -114,7 +114,7 @@ def gen_hashes(analyzer, filename, m_xgb, dest_folder, cols):
         for (time_, hash_) in hashes:
             hash_f.write(str(hash_) + '\t' + str(time_) + '\n')
         hash_f.flush()
-    print(time.ctime() + " extract #" + ": " + filename + " ..., " + str(len(one_feats)) + " hashes")
+    print(time.ctime() + " save #" + ": " + filename + " hashes")
     return True
 
 # Command to separate out setting of analyzer parameters
