@@ -86,22 +86,24 @@ def gen_samples(analyzer, filename_iteri, iterFlag=True, subsample=None):
     print("Generated " +  str(len(feats)) + " samples")
     return feats,probs
 
-def extract_landmarks(analyzer, m_xgb, mp3_iter, dest_folder, ncores):
+def extract_landmarks(analyzer, m_xgb, mp3_iter, dest_folder, cols, ncores):
+    for filename in mp3_iter:
+        gen_hashes(analyzer,filename,m_xgb,dest_folder,cols)
     ensure_dir(dest_folder)
-    retList = joblib.Parallel(n_jobs=ncores)(joblib.delayed(gen_hashes)(analyzer,filename,m_xgb,dest_folder) for filename in mp3_iter)
+    retList = joblib.Parallel(n_jobs=ncores)(joblib.delayed(gen_hashes)(analyzer,filename,m_xgb,dest_folder,cols) for filename in mp3_iter)
     for x in retList:
         if not x:
             return False
     return True
 
 
-def gen_hashes(analyzer, filename, m_xgb, dest_folder):
+def gen_hashes(analyzer, filename, m_xgb, dest_folder, cols):
     one_feats, one_probs = analyzer.wavfile2samples(filename, label=False)
-    #print(time.ctime() + " extract #" + ": " + filename + " ..., " + str(len(one_feats)) + " feats")
-    xprds = xgb.DMatrix(one_feats)
+    print(time.ctime() + " extract #" + ": " + filename + " ..., " + str(len(one_feats)) + " feats")
+    xprds = xgb.DMatrix(one_feats, feature_names=cols)
     prds = m_xgb.predict(xprds)
-    #print(time.ctime() + " predict #" + ": " + filename + " ..., ")
-    landmarks = [(f[0], f[2], f[3], f[4]) for f in one_feats]
+    print(time.ctime() + " predict #" + ": " + filename + " ..., ")
+    landmarks = [(int(f[0]), int(f[2]), int(f[3]), int(f[4])) for f in one_feats]
     prds = zip(prds, landmarks)
     prds = sorted(prds, key=lambda d:d[0], reverse=True)
     landmarks = [x[1] for x in prds]
@@ -110,7 +112,7 @@ def gen_hashes(analyzer, filename, m_xgb, dest_folder):
     hash_name = os.path.join(dest_folder, mp3_name+'.lmfp')
     with open(hash_name, 'w') as hash_f:
         for (time_, hash_) in hashes:
-            hash_f.write(','.join([hash_,time_]) + '\n')
+            hash_f.write(str(hash_) + '\t' + str(time_) + '\n')
         hash_f.flush()
     print(time.ctime() + " extract #" + ": " + filename + " ..., " + str(len(one_feats)) + " hashes")
     return True
@@ -247,7 +249,7 @@ def main(argv):
     m_xgb = train_xgb(ptrain,peval,cols)
     if args['--file'] and len(args['--file'])>0:
         mp3_iter = filename_list_iterator(args['--file'])
-        extract_landmarks(analyzer, m_xgb, mp3_iter, args['--dest'], ncores)
+        extract_landmarks(analyzer, m_xgb, mp3_iter, args['--dest'], cols, ncores)
     #train_keras(ptrain,peval,cols)
 
 
