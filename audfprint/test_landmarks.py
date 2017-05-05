@@ -319,7 +319,7 @@ def train_xgb(ptrain,peval,cols):
     print(np.mean(xeval.get_label()), len(xeval.get_label()))
     param = {'max_depth':5, 'eta':0.02, 'subsample':0.6, 'colsample_bytree':0.8, 'base_score':0.3, 'objective':'reg:linear', 'eval_metric':'rmse'}
     watchlist = [(xtrain, 'train'), (xevals, 'eval')]
-    m_xgb = xgb.train(param, xtrain, 100, watchlist, early_stopping_rounds=50)
+    m_xgb = xgb.train(param, xtrain, 3000, watchlist, early_stopping_rounds=50)
     imp = m_xgb.get_fscore()
     imp = sorted(imp.items() , key = lambda d:d[1], reverse=True)
     print(imp)

@@ -93,14 +93,14 @@ def value_at(sgrams, px, py):
 
 # Constants for Analyzer
 # DENSITY controls the density of landmarks found (approx DENSITY per sec)
-DENSITY = 100.0 #100.0,20.0
+DENSITY = 10.0 #100.0,20.0
 # OVERSAMP > 1 tries to generate extra landmarks by decaying faster
 OVERSAMP = 1
 ## 512 pt FFT @ 11025 Hz, 50% hop
 #t_win = 0.0464
 #t_hop = 0.0232
 # Just specify n_fft
-N_FFT = 2048 #2048,512
+N_FFT = 512 #2048,512
 N_HOP = 256
 # spectrogram enhancement
 HPF_POLE = 0.98
@@ -475,7 +475,7 @@ class Analyzer(object):
             test_cnt = 0.0
             # move a slide
             peaklist = self.wavfile2peaks(filename, 40)
-            peaklist = peaklist[6:34]
+            peaklist = peaklist[5:35]
             # test with wgn
             for db in range(40,121):
                 test_d = wgn(d, db/3.0)
@@ -525,9 +525,14 @@ class Analyzer(object):
             fts = [(f1, t1), (f2, t2)]
             for (fi,ti) in fts:
                 for sgrami in sgrams:
+                    '''
                     sq_i = squares(sgrami, fi, ti, 2)
                     feats_sur_i = np.concatenate(sq_i.tolist()).tolist()
                     feats_sur_i.extend([sq_i[2*loc[0]][2*loc[1]]-2*sq_i[loc[0]][loc[1]] for loc in locs])
+                    feats_sur_i.extend([curvature(sq_i,pos) for pos in poss])
+                    '''
+                    sq_i = squares(sgrami, fi, ti, 1)
+                    feats_sur_i = np.concatenate(sq_i.tolist()).tolist()
                     feats_sur_i.extend([curvature(sq_i,pos) for pos in poss])
                     feats_surs.append(feats_sur_i)
             # delta E / delta x
@@ -539,10 +544,12 @@ class Analyzer(object):
             feats_fe_12 = (np.array(feats_fe_1)*np.array(feats_fe_2)).tolist()
             feats_fe = feats_fe_1 + feats_fe_2 + feats_fe_12
             # line points
+            '''
             line = [ ( f1+(f2-f1)*i/10.0, t1+(t2-t1)*i/10.0 ) for i in range(1,10)]
             line_values = [ value_at(sgram,p[0],p[1]) for p in line]
             line_valueso = [ value_at(sgramo,p[0],p[1]) for p in line]
             feats_line = line_values + line_valueso + [np.mean(line_values),np.std(line_values),np.mean(line_valueso),np.std(line_valueso)]
+            '''
             # square points
             '''
             square_line = []
@@ -585,17 +592,17 @@ class Analyzer(object):
         fts = [('f1', 't1'), ('f2', 't2')]
         for (fi,ti) in fts:
             for ei in sgrams:
-                cols += [ '_'.join([ei,fi,ti,str(x)]) for x in range(0,25)]
-                cols += [ '_'.join([ei,fi,ti,'hess',loc[0],loc[1]]) for loc in locs]
+                cols += [ '_'.join([ei,fi,ti,str(x)]) for x in range(0,9)]
+                #cols += [ '_'.join([ei,fi,ti,'hess',loc[0],loc[1]]) for loc in locs]
                 cols += [ '_'.join([ei,fi,ti,'curve',pos[0],pos[1]]) for pos in poss]
         cols += ['de/df', 'de/dt', 'dt/de', 'rde/df', 'rde/dt']
         eof1 = ['eo1*f1', 'eo1*log(f1)', 'log(eo1)*f1']
         eof2 = ['eo2*f2', 'eo2*log(f2)', 'log(eo2)*f2']
-        eof12 = [ eof1[i]+eof2[i] for i in range(len(eof1))]
+        eof12 = [ eof1[i]+'-'+eof2[i] for i in range(len(eof1))]
         cols += (eof1 + eof2 + eof12)
         line = [ 'line_'+str(i/10.0) for i in range(1,10)]
         lineo = [ 'lineo_'+str(i/10.0) for i in range(1,10)]
-        cols += (line + lineo + ['line_mean', 'line_std','lineo_mean', 'lineo_std'])
+        #cols += (line + lineo + ['line_mean', 'line_std','lineo_mean', 'lineo_std'])
         sql = [ 'sql_'+str(i) for i in range(25)]
         sqlo = [ 'sqlo_'+str(i) for i in range(25)]
         #cols += (sql + sqlo + ['sql_mean', 'sql_std', 'sqlo_mean', 'sqlo_std'])
