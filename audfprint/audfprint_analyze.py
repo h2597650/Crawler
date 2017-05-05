@@ -93,7 +93,7 @@ def value_at(sgrams, px, py):
 
 # Constants for Analyzer
 # DENSITY controls the density of landmarks found (approx DENSITY per sec)
-DENSITY = 10.0 #100.0,20.0
+DENSITY = 5.0 #100.0,20.0
 # OVERSAMP > 1 tries to generate extra landmarks by decaying faster
 OVERSAMP = 1
 ## 512 pt FFT @ 11025 Hz, 50% hop
@@ -571,7 +571,7 @@ class Analyzer(object):
                 feats.extend(feats_sur_i)
             feats.extend(feats_delta)
             feats.extend(feats_fe)
-            feats.extend(feats_line)
+            #feats.extend(feats_line)
             #feats.extend(feats_sql)
             feats_list.append(feats)
         return np.array(feats_list), probs
