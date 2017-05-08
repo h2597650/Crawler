@@ -113,7 +113,6 @@ def extract_landmarks(analyzer, m_xgb, mp3_iter, dest_folder, cols, ncores):
 def gen_hashes(lock, analyzer, filename, m_xgb, dest_folder, cols):
     one_feats, one_probs = analyzer.wavfile2samples(filename, label=False)
     #print(time.ctime() + " extract #" + ": " + filename + " ..., " + str(len(one_feats)) + " feats")
-    q
     xprds = xgb.DMatrix(one_feats, feature_names=cols)
     with lock:
         prds = m_xgb.predict(xprds)
@@ -262,6 +261,7 @@ def main(argv):
         ptrain = pd.read_csv(ftrain, sep=",", engine='c')
         peval = pd.read_csv(feval, sep=",", engine='c')
     m_xgb = train_xgb(ptrain,peval,cols)
+    m_xgb.save_model('model.xgb')
     if args['--file'] and len(args['--file'])>0:
         mp3_iter = filename_list_iterator(args['--file'])
         extract_landmarks(analyzer, m_xgb, mp3_iter, args['--dest'], cols, ncores)
