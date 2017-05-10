@@ -458,11 +458,13 @@ class Analyzer(object):
         #print("wavfile2hashes: read", len(hashes), "hashes from", filename)
         return hashes
     
-    def wavfile2samples(self, filename, label=True, subsample=None):
+    def wavfile2samples(self, filename, label=True, subsample=None, subratio=None):
         landmarks = self.peaks2landmarks(self.wavfile2peaks(filename))
         d, sr = audio_read.audio_read(filename, sr=self.target_sr, channels=1)
         peaks,sgram,sgramo = self.find_peaks_sgram(d, sr)
         if subsample and subsample<len(landmarks):
+            if subratio:
+                subsample = int(len(landmarks)*subratio)
             index = np.random.choice(len(landmarks), subsample, replace=False)
             landmarks = [ landmarks[idx] for idx in index]
         lms_map = {}
